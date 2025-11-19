@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InstaGen Polaroid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              hand: ['Comic Sans MS', 'Chalkboard SE', 'sans-serif'],
+            },
+            colors: {
+              'camera-body': '#FDF6E3', // Creamy retro color
+              'camera-accent': '#E6C2A8', // Soft pink/beige
+              'camera-dark': '#2D2D2D',
+            },
+            animation: {
+              'eject': 'ejectPhoto 1s ease-out forwards',
+              'develop': 'developPhoto 5s ease-in-out forwards',
+            },
+            keyframes: {
+              ejectPhoto: {
+                '0%': { transform: 'translateY(0) scale(0.9)', opacity: '0' },
+                '50%': { opacity: '1' },
+                '100%': { transform: 'translateY(-120%) scale(1)', opacity: '1' },
+              },
+              developPhoto: {
+                '0%': { filter: 'blur(10px) grayscale(100%) brightness(1.2)' },
+                '100%': { filter: 'blur(0px) grayscale(0%) brightness(1)' },
+              }
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden; /* Prevent scroll on drag */
+        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+        background-size: 20px 20px;
+        background-color: #f3f4f6;
+      }
+      /* Hide scrollbar for gallery */
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      /* Prevent ghost image when dragging photos */
+      img {
+        -webkit-user-drag: none;
+        -khtml-user-drag: none;
+        -moz-user-drag: none;
+        -o-user-drag: none;
+        user-drag: none;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "uuid": "https://aistudiocdn.com/uuid@^13.0.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

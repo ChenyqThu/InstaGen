@@ -1,0 +1,7 @@
+{
+  "name": "InstaGen Polaroid",
+  "description": "An interactive Polaroid-style camera experience powered by Gemini 2.5 Flash Image for creative photo editing.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

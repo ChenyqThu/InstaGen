@@ -19,18 +19,23 @@
               'camera-dark': '#2D2D2D',
             },
             animation: {
-              'eject': 'ejectPhoto 1s ease-out forwards',
-              'develop': 'developPhoto 5s ease-in-out forwards',
+              'eject': 'ejectPhoto 5s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+              'develop': 'developPhoto 6s ease-in-out forwards',
+              'ping-slow': 'pingSlow 2.25s cubic-bezier(0, 0, 0.2, 1) infinite',
             },
             keyframes: {
               ejectPhoto: {
-                '0%': { transform: 'translateY(0) scale(0.9)', opacity: '0' },
-                '50%': { opacity: '1' },
-                '100%': { transform: 'translateY(-120%) scale(1)', opacity: '1' },
+                '0%': { transform: 'translateY(100%) scale(0.9)', opacity: '0' },
+                '100%': { transform: 'translateY(-170px) scale(1)', opacity: '1' },
               },
               developPhoto: {
-                '0%': { filter: 'blur(10px) grayscale(100%) brightness(1.2)' },
+                '0%': { filter: 'blur(15px) grayscale(50%) brightness(0.9)' },
                 '100%': { filter: 'blur(0px) grayscale(0%) brightness(1)' },
+              },
+              pingSlow: {
+                '0%': { transform: 'scale(1)', opacity: '0.5' },
+                '50%': { transform: 'scale(2)', opacity: '0' },
+                '100%': { transform: 'scale(2)', opacity: '0' },
               }
             }
           },
@@ -59,7 +64,6 @@
         -khtml-user-drag: none;
         -moz-user-drag: none;
         -o-user-drag: none;
-        user-drag: none;
       }
     </style>
   <script type="importmap">

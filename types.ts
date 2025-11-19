@@ -21,6 +21,7 @@ export interface PhotoData {
   status: PhotoStatus;
   frameStyle: PhotoFrameStyle;
   promptUsed?: string;
+  caption?: string;
 }
 
 export type Language = 'en' | 'zh';
@@ -34,4 +35,6 @@ export interface EditOption {
   key: string;
   label: { en: string; zh: string };
   prompt: string;
+  previewImage?: string;
+  model?: string;
 }

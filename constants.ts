@@ -1,37 +1,8 @@
-import { EditOption, Language, PhotoFrameStyle } from "./types";
+import { Language, PhotoFrameStyle } from "./types";
+import { MAGIC_EDIT_OPTIONS } from "./config/magicEditConfig";
 
-export const EDIT_OPTIONS: EditOption[] = [
-  { 
-    key: 'cartoon', 
-    label: { en: 'Cartoon', zh: '卡通化' }, 
-    prompt: 'Transform this photo into a vibrant cartoon style illustration, maintaining the composition.' 
-  },
-  { 
-    key: 'sketch', 
-    label: { en: 'Sketch', zh: '素描' }, 
-    prompt: 'Convert this photo into a detailed pencil sketch on paper.' 
-  },
-  { 
-    key: 'anime', 
-    label: { en: 'Anime', zh: '新海诚风' }, 
-    prompt: 'Reimagine this photo in the style of a Makoto Shinkai anime background, vibrant blue skies, cinematic lighting, high detail.' 
-  },
-  { 
-    key: 'retro', 
-    label: { en: 'Retro 80s', zh: '80年代复古' }, 
-    prompt: 'Apply a 1980s retro aesthetic filter, slightly grainy, neon accents, synthwave vibe.' 
-  },
-  { 
-    key: 'cyberpunk', 
-    label: { en: 'Cyberpunk', zh: '赛博朋克' }, 
-    prompt: 'Give this photo a futuristic cyberpunk look with neon lights, pink and blue glow, and dark tones.' 
-  },
-  {
-    key: 'watercolor',
-    label: { en: 'Watercolor', zh: '水彩画' },
-    prompt: 'Turn this image into a soft, artistic watercolor painting with bleeding edges and paper texture.'
-  }
-];
+// Re-export MAGIC_EDIT_OPTIONS as EDIT_OPTIONS for backward compatibility
+export const EDIT_OPTIONS = MAGIC_EDIT_OPTIONS;
 
 export const TRANSLATIONS = {
   en: {
@@ -43,13 +14,15 @@ export const TRANSLATIONS = {
     delete: 'Delete',
     processing: 'Gemini is painting...',
     error: 'Failed to process',
+    downloadError: 'Download failed, please try again',
     styles: 'Frame Styles',
     magic: 'Magic Edit',
     save: 'Close',
     download: 'Download',
-    expand: 'Edit / Zoom',
+    expand: 'Edit Photo',
     customPromptPlaceholder: 'Describe your edit...',
     go: 'Generate',
+    defaultCaption: 'May I meet you',
   },
   zh: {
     title: 'InstaGen',
@@ -60,19 +33,21 @@ export const TRANSLATIONS = {
     delete: '删除',
     processing: 'Gemini 正在绘制...',
     error: '处理失败',
+    downloadError: '下载失败，请重试',
     styles: '相纸风格',
     magic: '魔法编辑',
     save: '关闭',
     download: '下载',
-    expand: '编辑 / 放大',
+    expand: '编辑照片',
     customPromptPlaceholder: '描述你想怎么改...',
     go: '生成',
+    defaultCaption: '愿与你相遇',
   }
 };
 
 export const FRAME_STYLES = {
-  [PhotoFrameStyle.CLASSIC]: 'bg-white text-gray-800',
-  [PhotoFrameStyle.BLACK]: 'bg-gray-900 text-gray-200 border-gray-800',
+  [PhotoFrameStyle.CLASSIC]: 'bg-[#fdfdfd] text-gray-800',
+  [PhotoFrameStyle.BLACK]: 'bg-[#1a1a1a] text-gray-200',
   [PhotoFrameStyle.COLORFUL]: 'bg-gradient-to-br from-pink-100 to-yellow-100 text-pink-800',
-  [PhotoFrameStyle.VINTAGE]: 'bg-[#f4e4bc] text-[#5c4033] sepia-[.3]',
+  [PhotoFrameStyle.VINTAGE]: 'bg-[#f4e4bc] text-[#5c4033]',
 };

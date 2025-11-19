@@ -70,7 +70,7 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
   };
 
   return (
-    <div className="relative w-[380px] h-[380px] md:w-[420px] md:h-[420px] select-none z-20 transform hover:scale-[1.02] transition-transform duration-500 ease-in-out group">
+    <div className="relative w-[380px] h-[380px] md:w-[420px] md:h-[420px] select-none z-20 group">
       
       {/* Main Camera Image */}
       {/* IMPORTANT: Move your 'Retro Camera 1024.webp' to 'assets/camera.webp' */}
@@ -93,11 +93,11 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
         </div>
       )}
 
-      {/* Lens / Video Feed 
+      {/* Lens / Video Feed
           Positioned to match the lens of the Instax Square style camera.
-          Usually dead center. 
+          Adjusted based on actual camera image layout.
       */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[42%] h-[42%] rounded-full overflow-hidden bg-[#1a1a1a] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] z-10 ring-4 ring-black/80">
+      <div className="absolute top-[54.5%] left-[62.2%] transform -translate-x-1/2 -translate-y-1/2 w-[43%] h-[43%] rounded-full overflow-hidden bg-[#1a1a1a] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] z-30 ring-4 ring-black/80">
           {!streamError ? (
             <video
                 ref={videoRef}
@@ -117,18 +117,17 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
           <div className="absolute top-[15%] right-[15%] w-[10%] h-[5%] bg-white/20 rounded-full rotate-45 blur-[2px] pointer-events-none"></div>
       </div>
 
-      {/* Shutter Button Hotspot 
-          Standard Instax Square location: Front face, bottom corner (user's left if facing camera).
-          Adjusted position to match typical layout.
+      {/* Shutter Button Hotspot
+          Adjusted position to match the actual camera image layout.
       */}
       <button
         onClick={handleShutter}
-        className="absolute bottom-[22%] left-[11%] w-[16%] h-[16%] rounded-full z-30 cursor-pointer transition-all active:scale-90 focus:outline-none group-hover:bg-white/5"
+        className="absolute bottom-[37.5%] left-[15.5%] w-[14%] h-[14%] rounded-full z-30 cursor-pointer transition-all active:scale-90 focus:outline-none group-hover:bg-white/5"
         title={lang === 'en' ? 'Take Photo' : '拍照'}
         aria-label="Shutter"
       >
         {/* Visual ripple hint on hover */}
-        <span className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 animate-ping"></span>
+        <span className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 animate-ping-slow"></span>
       </button>
 
       {/* Hidden Canvas for processing */}

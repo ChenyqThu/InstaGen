@@ -11,7 +11,7 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [flashActive, setFlashActive] = useState(false);
-  
+
   const bringToFront = (id: string) => {
     setPhotos(prev => {
       const index = prev.findIndex(p => p.id === id);
@@ -30,9 +30,9 @@ const App: React.FC = () => {
 
     const newPhoto: PhotoData = {
       id: uuidv4(),
-      x: 60, 
-      y: -100, 
-      rotation: (Math.random() * 6) - 3,
+      x: 60,
+      y: -100,
+      rotation: 0,
       dataUrl,
       timestamp: Date.now(),
       status: PhotoStatus.DEVELOPING,
@@ -40,8 +40,8 @@ const App: React.FC = () => {
     };
 
     // Animation: "Eject" from the camera slot
-    // We position it physically near the camera first, then user drags
-    setPhotos(prev => [...prev, { ...newPhoto, x: 100, y: window.innerHeight / 2 - 200 }]);
+    // Position photos to appear from the top of the camera (left 1/4 of screen, visible area)
+    setPhotos(prev => [...prev, { ...newPhoto, x: window.innerWidth / 4 - 85, y: 200 }]);
   }, []);
 
   const updatePhoto = useCallback((id: string, updates: Partial<PhotoData>) => {
@@ -58,41 +58,68 @@ const App: React.FC = () => {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#F5F5F4] text-gray-800 font-sans selection:bg-[#E6C2A8] selection:text-white">
-      
+
       {/* Global Flash Overlay */}
-      <div 
+      <div
         className={`fixed inset-0 bg-white z-[100] pointer-events-none transition-opacity ease-out ${flashActive ? 'opacity-100 duration-0' : 'opacity-0 duration-500'}`}
       />
 
-      {/* Header / Controls */}
-      <div className="absolute top-6 right-8 z-50 flex gap-4 items-center">
-        <h1 className="text-2xl font-bold font-hand text-gray-600 tracking-wider hidden md:block opacity-50">
+      {/* Header - Logo & Title */}
+      <div className="absolute top-4 left-4 z-50 flex gap-1 items-center">
+        {/* Logo Placeholder */}
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
+          {/* TODO: Replace with actual logo image */}
+          <img
+            src="/logo.png"
+            alt="InstaGen Logo"
+            className="w-8 h-8 object-contain"
+            onError={(e) => {
+              // Fallback if logo doesn't exist yet
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        </div>
+        <h1 className="text-2xl font-bold font-hand text-[#F35750] tracking-wider opacity-70">
           {TRANSLATIONS[lang].title}
         </h1>
-        <button 
+      </div>
+
+      {/* Language Toggle - Top Right */}
+      <div className="absolute top-6 right-8 z-50">
+        <button
           onClick={toggleLang}
-          className="px-4 py-2 bg-white/80 backdrop-blur-md rounded-full shadow-sm border border-gray-200 text-sm font-medium hover:bg-white transition-colors"
+          className="w-12 h-12 bg-gradient-to-br from-[#F4A261]/20 to-[#E76F51]/20 backdrop-blur-sm rounded-full shadow-md border-2 border-[#E76F51]/30 text-sm font-bold text-[#E76F51] hover:from-[#F4A261]/30 hover:to-[#E76F51]/30 hover:border-[#E76F51]/50 transition-all duration-300 hover:scale-105"
         >
-          {lang === 'en' ? '中文' : 'English'}
+          {lang === 'en' ? 'EN' : 'ZH'}
         </button>
       </div>
 
       {/* Left Section: Camera Station */}
-      <div className="absolute left-0 top-0 bottom-0 w-full md:w-1/3 flex items-center justify-center z-40 pointer-events-none">
-        <div className="pointer-events-auto relative pt-10 pl-8">
-           <Camera onTakePhoto={handleTakePhoto} lang={lang} />
-           
-           {/* Decorative background element behind camera */}
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-[#E8E4D9] rounded-full -z-10 opacity-50 blur-3xl"></div>
+      <div className="absolute left-0 top-0 bottom-0 w-full md:w-1/2 flex items-center justify-center z-40 pointer-events-none">
+        <div className="pointer-events-auto relative">
+          <Camera onTakePhoto={handleTakePhoto} lang={lang} />
+
+          {/* Decorative background element behind camera */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-[#E8E4D9] rounded-full -z-10 opacity-50 blur-3xl"></div>
         </div>
       </div>
 
       {/* Right Section: Photo Board */}
       <div className="absolute inset-0 w-full h-full z-10">
-        <div className="absolute top-1/2 right-[20%] text-gray-300 font-bold text-4xl opacity-40 -rotate-6 pointer-events-none select-none hidden md:block">
-          {photos.length === 0 ? TRANSLATIONS[lang].dragHint : ''}
-        </div>
-        
+        {/* Warm Polka Dot Background */}
+        <div
+          className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle, #F4A261 1.5px, transparent 1.5px),
+              radial-gradient(circle, #E76F51 1.5px, transparent 1.5px),
+              radial-gradient(circle, #F4A261 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px, 80px 80px, 40px 40px',
+            backgroundPosition: '0 0, 37px 23px, 19px 51px'
+          }}
+        />
+
         {photos.map((photo, index) => (
           <PolaroidPhoto
             key={photo.id}

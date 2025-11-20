@@ -237,6 +237,27 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
               {t.download}
             </button>
             <button
+              onClick={async () => {
+                try {
+                  setIsProcessing(true);
+                  const { pinPhotoToPublic } = await import('../services/supabaseClient');
+                  await pinPhotoToPublic(photo);
+                  alert('Pinned to public gallery!');
+                } catch (error) {
+                  console.error(error);
+                  alert('Failed to pin photo. Check console for details.');
+                } finally {
+                  setIsProcessing(false);
+                }
+              }}
+              className="flex items-center justify-center w-full py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium text-sm hover:from-pink-600 hover:to-rose-600 transition-colors shadow-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+              </svg>
+              Pin to Gallery
+            </button>
+            <button
               onClick={handleDelete}
               className="w-full py-3 text-red-500 hover:bg-red-50 rounded-xl text-sm font-medium transition-colors"
             >

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Camera } from './components/Camera';
 import { PolaroidPhoto } from './components/PolaroidPhoto';
 import { PhotoModal } from './components/PhotoModal';
+import { PublicGallery } from './components/PublicGallery';
 import { Language, PhotoData, PhotoFrameStyle, PhotoStatus } from './types';
 import { TRANSLATIONS } from './constants';
 
@@ -11,6 +12,7 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [flashActive, setFlashActive] = useState(false);
+  const [showGallery, setShowGallery] = useState(false);
 
   const bringToFront = (id: string) => {
     setPhotos(prev => {
@@ -149,6 +151,27 @@ const App: React.FC = () => {
       <div className="absolute bottom-4 right-4 md:right-auto md:w-full md:text-center text-gray-400 text-[10px] z-0 pointer-events-none font-mono tracking-tighter">
         POWERED BY GOOGLE GEMINI 2.5 FLASH
       </div>
+
+      {/* Public Gallery Entry */}
+      <div className="absolute bottom-6 left-6 z-50">
+        <button
+          onClick={() => setShowGallery(true)}
+          className="group flex items-center gap-3 pr-4 pr-6 bg-[#F5F5F4] border-2 border-[#E76F51]/30 rounded-full shadow-md hover:scale-105 hover:border-[#E76F51] transition-all duration-300"
+        >
+          <div className="w-12 h-12 rounded-full bg-[#E76F51] flex items-center justify-center text-white shadow-sm group-hover:rotate-12 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375 0 11-.75 0 .375 0 01.75 0z" />
+            </svg>
+          </div>
+          <span className="text-lg font-hand font-bold text-[#E76F51] tracking-wider">Public Gallery</span>
+        </button>
+      </div>
+
+      <PublicGallery
+        isOpen={showGallery}
+        onClose={() => setShowGallery(false)}
+        lang={lang}
+      />
     </div>
   );
 };

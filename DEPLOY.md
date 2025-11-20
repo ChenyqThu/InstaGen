@@ -43,7 +43,12 @@ Vercel should automatically detect that this is a **Vite** project.
 2.  Add a new variable:
     *   **Key**: `GEMINI_API_KEY`
     *   **Value**: Your actual Gemini API Key (starts with `AIza...`)
-3.  Click **"Add"**.
+4.  Add Supabase variables (see `SUPABASE_SETUP.md`):
+    *   **Key**: `VITE_SUPABASE_URL`
+    *   **Value**: Your Supabase Project URL
+    *   **Key**: `VITE_SUPABASE_ANON_KEY`
+    *   **Value**: Your Supabase Anon Key
+5.  Click **"Add"**.
 
 > **Note**: The backend function (`api/generate.js`) reads `process.env.GEMINI_API_KEY` on the server side.
 

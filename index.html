@@ -1,71 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>InstaGen Polaroid</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              hand: ['Comic Sans MS', 'Chalkboard SE', 'sans-serif'],
-            },
-            colors: {
-              'camera-body': '#FDF6E3', // Creamy retro color
-              'camera-accent': '#E6C2A8', // Soft pink/beige
-              'camera-dark': '#2D2D2D',
-            },
-            animation: {
-              'eject': 'ejectPhoto 5s cubic-bezier(0.23, 1, 0.32, 1) forwards',
-              'develop': 'developPhoto 6s ease-in-out forwards',
-              'ping-slow': 'pingSlow 2.25s cubic-bezier(0, 0, 0.2, 1) infinite',
-            },
-            keyframes: {
-              ejectPhoto: {
-                '0%': { transform: 'translateY(100%) scale(0.9)', opacity: '0' },
-                '100%': { transform: 'translateY(-170px) scale(1)', opacity: '1' },
-              },
-              developPhoto: {
-                '0%': { filter: 'blur(15px) grayscale(50%) brightness(0.9)' },
-                '100%': { filter: 'blur(0px) grayscale(0%) brightness(1)' },
-              },
-              pingSlow: {
-                '0%': { transform: 'scale(1)', opacity: '0.5' },
-                '50%': { transform: 'scale(2)', opacity: '0' },
-                '100%': { transform: 'scale(2)', opacity: '0' },
-              }
-            }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InstaGen Polaroid</title>
+  <link rel="icon" type="image/png" href="/favicon.ico" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            hand: ['Comic Sans MS', 'Chalkboard SE', 'sans-serif'],
           },
+          colors: {
+            'camera-body': '#FDF6E3', // Creamy retro color
+            'camera-accent': '#E6C2A8', // Soft pink/beige
+            'camera-dark': '#2D2D2D',
+          },
+          animation: {
+            'eject': 'ejectPhoto 5s cubic-bezier(0.23, 1, 0.32, 1) forwards',
+            'develop': 'developPhoto 6s ease-in-out forwards',
+            'ping-slow': 'pingSlow 2.25s cubic-bezier(0, 0, 0.2, 1) infinite',
+          },
+          keyframes: {
+            ejectPhoto: {
+              '0%': { transform: 'translateY(100%) scale(0.9)', opacity: '0' },
+              '100%': { transform: 'translateY(-170px) scale(1)', opacity: '1' },
+            },
+            developPhoto: {
+              '0%': { filter: 'blur(15px) grayscale(50%) brightness(0.9)' },
+              '100%': { filter: 'blur(0px) grayscale(0%) brightness(1)' },
+            },
+            pingSlow: {
+              '0%': { transform: 'scale(1)', opacity: '0.5' },
+              '50%': { transform: 'scale(2)', opacity: '0' },
+              '100%': { transform: 'scale(2)', opacity: '0' },
+            }
+          }
         },
-      }
-    </script>
-    <style>
-      body {
-        margin: 0;
-        overflow: hidden; /* Prevent scroll on drag */
-        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-        background-size: 20px 20px;
-        background-color: #f3f4f6;
-      }
-      /* Hide scrollbar for gallery */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-      /* Prevent ghost image when dragging photos */
-      img {
-        -webkit-user-drag: none;
-        -khtml-user-drag: none;
-        -moz-user-drag: none;
-        -o-user-drag: none;
-      }
-    </style>
+      },
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      /* Prevent scroll on drag */
+      background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+      background-size: 20px 20px;
+      background-color: #f3f4f6;
+    }
+
+    /* Hide scrollbar for gallery */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Prevent ghost image when dragging photos */
+    img {
+      -webkit-user-drag: none;
+      -khtml-user-drag: none;
+      -moz-user-drag: none;
+      -o-user-drag: none;
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -78,8 +84,10 @@
 }
 </script>
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

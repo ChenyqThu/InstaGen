@@ -43,8 +43,11 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showShareConfirm, setShowShareConfirm] = useState(false);
 
   // Sync local photo when prop changes
   useEffect(() => {
@@ -227,10 +230,48 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
 
   const handleDelete = async () => {
     if (showDeleteConfirm) {
-      await onDelete();
-      onClose();
+      setIsDeleting(true);
+      try {
+        await onDelete();
+        onClose();
+      } catch (error) {
+        console.error('Delete failed:', error);
+      } finally {
+        setIsDeleting(false);
+      }
     } else {
       setShowDeleteConfirm(true);
+    }
+  };
+
+  const handleShareClick = () => {
+    if (photo.is_public) {
+      handleUnshare();
+    } else {
+      setShowShareConfirm(true);
+    }
+  };
+
+  const handleConfirmShare = async () => {
+    setIsSharing(true);
+    try {
+      await onShare();
+      setShowShareConfirm(false);
+    } catch (error) {
+      console.error('Share failed:', error);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const handleUnshare = async () => {
+    setIsSharing(true);
+    try {
+      await onUnshare();
+    } catch (error) {
+      console.error('Unshare failed:', error);
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -482,21 +523,54 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
                 {isSaving && (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 )}
-                {t.saveChanges}
+                {isSaving ? t.saving : t.saveChanges}
               </button>
             </div>
 
             {/* Share Button */}
             <button
-              onClick={photo.is_public ? onUnshare : onShare}
-              className={`w-full flex items-center justify-center gap-2 py-3 border-2 rounded-xl transition-all font-medium text-sm ${photo.is_public
+              onClick={handleShareClick}
+              disabled={isSharing}
+              className={`w-full flex items-center justify-center gap-2 py-3 border-2 rounded-xl transition-all font-medium text-sm disabled:opacity-50 ${photo.is_public
                   ? 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100'
                   : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400 hover:text-blue-500'
                 }`}
             >
-              {photo.is_public ? <Lock className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
-              {photo.is_public ? t.unshare : t.share}
+              {isSharing ? (
+                <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : photo.is_public ? (
+                <Lock className="w-4 h-4" />
+              ) : (
+                <Globe className="w-4 h-4" />
+              )}
+              {isSharing ? t.sharing : (photo.is_public ? t.unshare : t.share)}
             </button>
+
+            {/* Share Confirmation Dialog */}
+            {showShareConfirm && (
+              <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 animate-in slide-in-from-bottom-2">
+                <h4 className="font-medium text-gray-800 mb-1">{t.shareConfirmTitle}</h4>
+                <p className="text-sm text-gray-600 mb-3">{t.shareConfirmMessage}</p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setShowShareConfirm(false)}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-white rounded-lg transition-colors"
+                  >
+                    {t.cancel}
+                  </button>
+                  <button
+                    onClick={handleConfirmShare}
+                    disabled={isSharing}
+                    className="px-4 py-2 text-sm font-medium text-white bg-[#E76F51] hover:bg-[#d65d41] rounded-lg transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isSharing && (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {t.confirmShare}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Delete */}
             <div className="pt-2 border-t border-gray-100">
@@ -506,15 +580,20 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShowDeleteConfirm(false)}
-                      className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-white rounded-lg transition-colors"
+                      disabled={isDeleting}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-white rounded-lg transition-colors disabled:opacity-50"
                     >
                       {t.cancel}
                     </button>
                     <button
                       onClick={handleDelete}
-                      className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm"
+                      disabled={isDeleting}
+                      className="px-3 py-1.5 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
                     >
-                      {t.delete}
+                      {isDeleting && (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      )}
+                      {isDeleting ? t.deleting : t.delete}
                     </button>
                   </div>
                 </div>

@@ -39,13 +39,14 @@ export const photoService = {
     },
 
     /**
-     * Get all photos for a specific user
+     * Get all photos for a specific user (excluding archived)
      */
     async getUserPhotos(userId: string): Promise<SavedPhoto[]> {
         const { data, error } = await supabase
             .from('user_photos')
             .select('*')
             .eq('user_id', userId)
+            .eq('archived', false)
             .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -53,12 +54,24 @@ export const photoService = {
     },
 
     /**
-     * Delete a photo
+     * Soft delete a photo (set archived = true)
      */
     async deletePhoto(photoId: string, userId: string): Promise<void> {
+        // First, archive in public_photos if it was shared
+        const { error: publicArchiveError } = await supabase
+            .from('public_photos')
+            .update({ archived: true })
+            .eq('source_photo_id', photoId)
+            .eq('user_id', userId);
+
+        if (publicArchiveError) {
+            console.error('Failed to archive in public_photos:', publicArchiveError);
+        }
+
+        // Then archive in user_photos
         const { error } = await supabase
             .from('user_photos')
-            .delete()
+            .update({ archived: true })
             .eq('id', photoId)
             .eq('user_id', userId);
 
@@ -88,13 +101,6 @@ export const photoService = {
         if (updateError) throw updateError;
 
         // Insert into public_photos
-        // Note: public_photos table structure might vary, assuming it has similar fields
-        // Based on the SQL script, we added user_id and source_photo_id
-        // We might need to duplicate data or just link it. 
-        // The SQL script says:
-        // alter table public_photos add column user_id ..., add column source_photo_id ...
-        // So we probably need to insert a new record into public_photos
-
         const { error: insertError } = await supabase
             .from('public_photos')
             .insert({
@@ -106,17 +112,17 @@ export const photoService = {
                 filter_id: photo.filter_id,
                 pokemon_id: photo.pokemon_id,
                 prompt_used: photo.prompt_used,
-                created_at: new Date().toISOString(), // Public photo creation time
+                timestamp: new Date(photo.created_at).getTime(),
             });
 
         if (insertError) throw insertError;
     },
 
     /**
-     * Unshare a photo from the public gallery
+     * Unshare a photo from the public gallery (soft delete)
      */
     async unshareFromPublic(photoId: string, userId: string): Promise<void> {
-        // Update is_public flag
+        // Update is_public flag in user_photos
         const { error: updateError } = await supabase
             .from('user_photos')
             .update({ is_public: false })
@@ -125,14 +131,14 @@ export const photoService = {
 
         if (updateError) throw updateError;
 
-        // Delete from public_photos
-        const { error: deleteError } = await supabase
+        // Soft delete from public_photos (set archived = true)
+        const { error: archiveError } = await supabase
             .from('public_photos')
-            .delete()
+            .update({ archived: true })
             .eq('source_photo_id', photoId)
             .eq('user_id', userId);
 
-        if (deleteError) throw deleteError;
+        if (archiveError) throw archiveError;
     },
 
     /**
@@ -183,12 +189,13 @@ export const photoService = {
     },
 
     /**
-     * Fetch all public photos for the gallery
+     * Fetch all public photos for the gallery (excluding archived)
      */
     async fetchPublicPhotos() {
         const { data, error } = await supabase
             .from('public_photos')
             .select('*')
+            .eq('archived', false)
             .order('created_at', { ascending: false })
             .limit(50);
 

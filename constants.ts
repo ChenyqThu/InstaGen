@@ -107,6 +107,26 @@ export const TRANSLATIONS = {
     updateSuccess: 'Photo updated!',
     updateError: 'Failed to update photo',
     unsavedChanges: 'You have unsaved changes. Are you sure you want to close?',
+
+    // Phase 6: Gallery UI/UX
+    searchPlaceholder: 'Search photos...',
+    sortNewest: 'Newest first',
+    sortOldest: 'Oldest first',
+    noPhotosTitle: 'No photos yet',
+    noPhotosDescription: 'Take a photo and tap save to add it to your collection',
+    goTakePhoto: 'Take a photo',
+    shareConfirmTitle: 'Share to public gallery?',
+    shareConfirmMessage: 'Once shared, everyone can see this photo.',
+    confirmShare: 'Share',
+    saving: 'Saving...',
+    downloading: 'Downloading...',
+    sharing: 'Sharing...',
+    deleting: 'Deleting...',
+    saveSuccess: 'Saved successfully!',
+    shareSuccess: 'Shared to public gallery!',
+    unshareSuccess: 'Removed from public gallery',
+    deleteSuccess: 'Photo deleted',
+    operationError: 'Operation failed, please try again',
   },
   zh: {
     title: 'InstaGen',
@@ -210,6 +230,26 @@ export const TRANSLATIONS = {
     updateSuccess: '照片已更新！',
     updateError: '更新照片失败',
     unsavedChanges: '有未保存的更改，确定要关闭吗？',
+
+    // Phase 6: Gallery UI/UX
+    searchPlaceholder: '搜索照片...',
+    sortNewest: '最新优先',
+    sortOldest: '最早优先',
+    noPhotosTitle: '还没有照片',
+    noPhotosDescription: '拍摄一张照片，点击保存按钮即可收藏',
+    goTakePhoto: '去拍照',
+    shareConfirmTitle: '分享到公共画廊？',
+    shareConfirmMessage: '分享后，所有人都可以看到这张照片。',
+    confirmShare: '确认分享',
+    saving: '保存中...',
+    downloading: '下载中...',
+    sharing: '分享中...',
+    deleting: '删除中...',
+    saveSuccess: '保存成功！',
+    shareSuccess: '已分享到公共画廊！',
+    unshareSuccess: '已从公共画廊移除',
+    deleteSuccess: '照片已删除',
+    operationError: '操作失败，请重试',
   }
 };
 

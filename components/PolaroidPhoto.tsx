@@ -1,4 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Save, Check } from 'lucide-react';
+import { useMyPhotos } from '@/src/hooks/useMyPhotos';
+import { useAuth } from '@/src/contexts/AuthContext';
 import { Language, PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
 import { FRAME_STYLES, TRANSLATIONS } from '../constants';
 import { PokemonCard } from './pokemon-css/PokemonCard';
@@ -11,6 +14,7 @@ interface PolaroidPhotoProps {
   onUpdate: (id: string, updates: Partial<PhotoData>) => void;
   onSelect: (id: string) => void;
   onEditStart: (id: string) => void;
+  onLoginRequest: () => void;
 }
 
 export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
@@ -20,10 +24,17 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
   onUpdate,
   onSelect,
   onEditStart,
+  onLoginRequest,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [dragTilt, setDragTilt] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const { savePhoto } = useMyPhotos();
+  const { isAuthenticated } = useAuth();
+
   const dragStart = useRef({ x: 0, y: 0 });
   const dragStartMouse = useRef({ x: 0, y: 0 });
   const hasMoved = useRef(false);
@@ -108,6 +119,29 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
   const getAnimationClass = () => {
     if (isLatest && photo.status === PhotoStatus.DEVELOPING) return 'animate-eject z-10';
     return '';
+  };
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!isAuthenticated) {
+      onLoginRequest();
+      return;
+    }
+
+    if (isSaving || saveSuccess) return;
+
+    try {
+      setIsSaving(true);
+      await savePhoto(photo);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Failed to save photo:', error);
+      // Could show toast here
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const frameClass = FRAME_STYLES[photo.frameStyle] || FRAME_STYLES[PhotoFrameStyle.CLASSIC];
@@ -276,7 +310,27 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
       )}
 
       {/* Edit/Expand Button (Visible on hover only) - Outside frame */}
-      <div className={`absolute -top-3 -right-3 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`absolute -top-3 -right-3 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'} flex flex-col gap-2`}>
+        {/* Save Button (Only when DONE) */}
+        {photo.status === PhotoStatus.DONE && (
+          <button
+            onClick={handleSave}
+            className={`w-9 h-9 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 border-2 ${saveSuccess
+                ? 'bg-green-100 text-green-600 border-green-200'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400 hover:text-blue-500'
+              }`}
+            title={saveSuccess ? t.saved : t.savePhoto}
+          >
+            {isSaving ? (
+              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            ) : saveSuccess ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Save className="w-4 h-4" />
+            )}
+          </button>
+        )}
+
         <button
           onClick={() => onEditStart(photo.id)}
           className="w-9 h-9 bg-gradient-to-br from-white to-[#F5F5F4] hover:from-[#F4A261] hover:to-[#E76F51] text-[#E76F51] hover:text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 border-2 border-[#E76F51]/30 hover:border-[#E76F51]"

@@ -7,6 +7,7 @@ import { PublicGallery } from './components/PublicGallery';
 import { Language, PhotoData, PhotoFrameStyle, PhotoStatus } from './types';
 import { TRANSLATIONS } from './constants';
 import { UserMenu } from '@/src/components/auth/UserMenu';
+import { LoginModal } from '@/src/components/auth/LoginModal';
 
 const App: React.FC = () => {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
@@ -14,6 +15,7 @@ const App: React.FC = () => {
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [flashActive, setFlashActive] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const bringToFront = (id: string) => {
     setPhotos(prev => {
@@ -97,7 +99,7 @@ const App: React.FC = () => {
           <span className="text-lg group-hover:animate-spin">🌍</span>
           <span className="text-sm">{lang === 'en' ? 'English' : '中文'}</span>
         </button>
-        <UserMenu lang={lang} />
+        <UserMenu lang={lang} onLoginClick={() => setIsLoginModalOpen(true)} />
       </div>
 
       {/* Left Section: Camera Station */}
@@ -135,6 +137,7 @@ const App: React.FC = () => {
             onUpdate={updatePhoto}
             onSelect={bringToFront}
             onEditStart={setEditingPhotoId}
+            onLoginRequest={() => setIsLoginModalOpen(true)}
           />
         ))}
       </div>
@@ -174,6 +177,12 @@ const App: React.FC = () => {
       <PublicGallery
         isOpen={showGallery}
         onClose={() => setShowGallery(false)}
+        lang={lang}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
         lang={lang}
       />
     </div>

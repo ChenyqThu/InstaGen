@@ -1,18 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { LogOut, User as UserIcon, Settings, Image as ImageIcon, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { LoginModal } from './LoginModal';
+import { MyGallery } from '../gallery/MyGallery';
 import { TRANSLATIONS } from '@/constants';
 import { Language } from '@/types';
 
 interface UserMenuProps {
     lang?: Language;
+    onLoginClick: () => void;
 }
 
-export const UserMenu: React.FC<UserMenuProps> = ({ lang = 'en' }) => {
+export const UserMenu: React.FC<UserMenuProps> = ({ lang = 'en', onLoginClick }) => {
     const { user, signOut, isAuthenticated } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+    const [showGallery, setShowGallery] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const t = TRANSLATIONS[lang];
 
@@ -38,20 +39,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({ lang = 'en' }) => {
 
     if (!isAuthenticated) {
         return (
-            <>
-                <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="px-6 py-2.5 bg-gradient-to-r from-[#E76F51] to-[#F4A261] text-white font-medium rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
-                >
-                    <UserIcon className="w-4 h-4" />
-                    {t.login}
-                </button>
-                <LoginModal
-                    isOpen={isLoginModalOpen}
-                    onClose={() => setIsLoginModalOpen(false)}
-                    lang={lang}
-                />
-            </>
+            <button
+                onClick={onLoginClick}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#E76F51] to-[#F4A261] text-white font-medium rounded-xl shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+            >
+                <UserIcon className="w-4 h-4" />
+                {t.login}
+            </button>
         );
     }
 
@@ -91,7 +85,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({ lang = 'en' }) => {
                             <UserIcon className="w-4 h-4 text-[#F4A261]" />
                             {t.myAccount}
                         </button>
-                        <button className="w-full px-3 py-2 text-left text-[#374151] hover:bg-[#FDF8F5] rounded-lg transition-colors flex items-center gap-3">
+                        <button
+                            onClick={() => {
+                                setShowGallery(true);
+                                setIsMenuOpen(false);
+                            }}
+                            className="w-full px-3 py-2 text-left text-[#374151] hover:bg-[#FDF8F5] rounded-lg transition-colors flex items-center gap-3"
+                        >
                             <ImageIcon className="w-4 h-4 text-[#E76F51]" />
                             {t.myPhotos}
                         </button>
@@ -112,6 +112,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({ lang = 'en' }) => {
                     </div>
                 </div>
             )}
+
+            <MyGallery
+                isOpen={showGallery}
+                onClose={() => setShowGallery(false)}
+                lang={lang}
+            />
         </div>
     );
 };

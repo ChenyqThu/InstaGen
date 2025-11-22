@@ -2,7 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
 import { fetchPublicPhotos } from '../services/supabaseClient';
 import { PolaroidFrame } from './PolaroidFrame';
+import { PokemonCard } from './pokemon-css/PokemonCard';
+import pokemonData from './pokemon-css/data.json';
 import { TRANSLATIONS } from '../constants';
+import { INSTAGRAM_FILTERS } from '../config/filterConfig';
 
 interface PublicGalleryProps {
     isOpen: boolean;
@@ -37,6 +40,8 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
                 frameStyle: p.frame_style as PhotoFrameStyle,
                 caption: p.caption,
                 promptUsed: p.prompt_used,
+                pokemonId: p.pokemon_id,
+                filterId: p.filter_id,
             }));
             setPhotos(mappedPhotos);
         } catch (error) {
@@ -67,7 +72,7 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
             {/* Header */}
             <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-md border-b border-stone-200 z-10 shadow-sm">
                 <h2 className="text-2xl font-bold font-hand text-stone-800">
-                    Public Pinboard <span className="text-stone-400 text-sm font-sans font-normal ml-2">Global Gallery</span>
+                    {t.publicPinboard} <span className="text-stone-400 text-sm font-sans font-normal ml-2">{t.globalGallery}</span>
                 </h2>
                 <button
                     onClick={onClose}
@@ -87,32 +92,58 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 pb-20 pt-8">
-                        {photos.map((photo) => (
-                            <div key={photo.id} className="relative flex justify-center transform hover:scale-105 transition-transform duration-300 group" style={{ transform: `rotate(${photo.rotation}deg)` }}>
-                                {/* Red Pin */}
-                                <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 drop-shadow-md">
-                                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <circle cx="20" cy="12" r="8" fill="#EF4444" stroke="#B91C1C" strokeWidth="2" />
-                                        <path d="M20 20L20 30" stroke="#991B1B" strokeWidth="3" strokeLinecap="round" />
-                                        <circle cx="20" cy="12" r="3" fill="#FCA5A5" fillOpacity="0.5" />
-                                    </svg>
-                                </div>
+                        {photos.map((photo) => {
+                            // Get filter class if filterId exists
+                            const filterClass = photo.filterId
+                                ? INSTAGRAM_FILTERS.find(f => f.id === photo.filterId)?.className || ''
+                                : '';
+                            // Get pokemon card data if pokemonId exists
+                            const pokemonCard = photo.pokemonId
+                                ? pokemonData.find(p => p.id === photo.pokemonId)
+                                : null;
 
-                                <PolaroidFrame
-                                    dataUrl={photo.dataUrl}
-                                    caption={photo.caption}
-                                    timestamp={photo.timestamp}
-                                    frameStyle={photo.frameStyle}
-                                    scale={0.8}
-                                    editable={false}
-                                    promptUsed={photo.promptUsed}
-                                    lang={lang}
-                                />
-                            </div>
-                        ))}
+                            return (
+                                <div key={photo.id} className="relative flex justify-center transform hover:scale-105 transition-transform duration-300 group" style={{ transform: `rotate(${photo.rotation}deg)` }}>
+                                    {pokemonCard ? (
+                                        <div className={`w-[200px] h-[280px] ${filterClass}`}>
+                                            <PokemonCard
+                                                {...pokemonCard}
+                                                img={photo.dataUrl}
+                                                name={photo.caption || ''}
+                                                className="w-full h-full"
+                                            >
+                                                <PolaroidFrame
+                                                    dataUrl={photo.dataUrl}
+                                                    caption={photo.caption}
+                                                    timestamp={photo.timestamp}
+                                                    frameStyle={photo.frameStyle}
+                                                    scale={0.6}
+                                                    editable={false}
+                                                    promptUsed={photo.promptUsed}
+                                                    lang={lang}
+                                                />
+                                            </PokemonCard>
+                                        </div>
+                                    ) : (
+                                        <div className={filterClass}>
+                                            <PolaroidFrame
+                                                dataUrl={photo.dataUrl}
+                                                caption={photo.caption}
+                                                timestamp={photo.timestamp}
+                                                frameStyle={photo.frameStyle}
+                                                scale={0.8}
+                                                editable={false}
+                                                promptUsed={photo.promptUsed}
+                                                lang={lang}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                         {photos.length === 0 && (
                             <div className="col-span-full text-center text-stone-400 py-20">
-                                No photos pinned yet. Be the first!
+                                {t.emptyGallery}
                             </div>
                         )}
                     </div>

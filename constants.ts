@@ -23,6 +23,15 @@ export const TRANSLATIONS = {
     customPromptPlaceholder: 'Describe your edit...',
     go: 'Generate',
     defaultCaption: 'May I meet you',
+    cardEffect: 'Card Effect',
+    cardEffectNone: 'None',
+    pinToGallery: 'Pin to Gallery',
+    pinSuccess: 'Pinned to public gallery!',
+    pinError: 'Failed to pin photo. Check console for details.',
+    publicGallery: 'Public Gallery',
+    publicPinboard: 'Public Pinboard',
+    globalGallery: 'Global Gallery',
+    emptyGallery: 'No photos pinned yet. Be the first!',
   },
   zh: {
     title: 'InstaGen',
@@ -42,6 +51,15 @@ export const TRANSLATIONS = {
     customPromptPlaceholder: '描述你想怎么改...',
     go: '生成',
     defaultCaption: '愿与你相遇',
+    cardEffect: '卡片特效',
+    cardEffectNone: '无',
+    pinToGallery: '添加到画廊',
+    pinSuccess: '已添加到公共画廊！',
+    pinError: '钉图失败，请查看控制台了解详情。',
+    publicGallery: '公共画廊',
+    publicPinboard: '公共展板',
+    globalGallery: '全球画廊',
+    emptyGallery: '还没有照片，成为第一个分享的人吧！',
   }
 };
 

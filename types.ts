@@ -23,6 +23,7 @@ export interface PhotoData {
   promptUsed?: string;
   caption?: string;
   pokemonId?: string;
+  filterId?: string; // Instagram filter ID
 }
 
 export type Language = 'en' | 'zh';

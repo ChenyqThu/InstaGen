@@ -20,6 +20,8 @@ export const pinPhotoToPublic = async (photo: PhotoData) => {
             frame_style: photo.frameStyle,
             timestamp: photo.timestamp,
             prompt_used: photo.promptUsed,
+            pokemon_id: photo.pokemonId,
+            filter_id: photo.filterId,
         });
 
     if (error) throw error;

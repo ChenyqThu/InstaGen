@@ -24,12 +24,15 @@ npm run preview
 
 ## Environment Setup
 
-Create a `.env.local` file in the root directory with:
+Create a `.env` file in the root directory with:
 ```
 GEMINI_API_KEY=your_api_key_here
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-The API key is accessed via `process.env.API_KEY` or `process.env.GEMINI_API_KEY` (both mapped in vite.config.ts:14-15).
+The Gemini API key is accessed via `process.env.API_KEY` or `process.env.GEMINI_API_KEY` (both mapped in vite.config.ts:14-15).
+Supabase credentials are used for the public gallery feature (services/supabaseClient.ts).
 
 ## Architecture
 
@@ -58,6 +61,14 @@ All photo data is managed through the `PhotoData` interface with position (x, y)
 - Outputs square images with centered crop
 - Fallback UI shown if image fails to load
 
+**Instagram Filters** (components/FilterWheel.tsx + config/filterConfig.ts):
+- Rotatable gear wheel around camera lens for filter selection
+- 24 Instagram-style filters (Normal, 1977, Aden, Amaro, etc.)
+- Filters applied via CSS classes from public/instagram.css
+- Canvas context.filter used for photo capture
+- Bilingual filter names (English/Chinese) in filterConfig.ts
+- Filter ID saved with photo for gallery display
+
 **Gemini API Integration** (services/geminiService.ts):
 - Model: `gemini-2.5-flash-image`
 - Sends base64 image + text prompt
@@ -84,12 +95,21 @@ All photo data is managed through the `PhotoData` interface with position (x, y)
 ├── constants.ts               # Edit options, translations, frame styles
 ├── vite.config.ts             # Vite config with env var injection
 ├── components/
-│   ├── Camera.tsx            # Webcam capture interface
+│   ├── Camera.tsx            # Webcam capture with filter wheel
+│   ├── FilterWheel.tsx       # Rotatable filter selector gear
 │   ├── PolaroidPhoto.tsx     # Draggable photo component
-│   └── PhotoModal.tsx        # Edit modal with AI controls
+│   ├── PolaroidFrame.tsx     # Photo frame with styles
+│   ├── PhotoModal.tsx        # Edit modal with AI controls
+│   ├── PublicGallery.tsx     # Public gallery view
+│   └── pokemon-css/          # Pokemon card holographic effects
+├── config/
+│   ├── filterConfig.ts       # Instagram filter definitions
+│   └── magicEditConfig.ts    # AI edit options
 ├── services/
-│   └── geminiService.ts      # Gemini API client
+│   ├── geminiService.ts      # Gemini API client
+│   └── supabaseClient.ts     # Supabase client for gallery
 └── public/
+    ├── instagram.css         # Instagram filter CSS
     └── assets/
         └── camera.webp       # Camera image asset (required)
 ```
@@ -115,3 +135,9 @@ All photo data is managed through the `PhotoData` interface with position (x, y)
 - Photos stored in React state only (no localStorage/backend)
 - Refreshing page clears all photos
 - Download creates timestamped PNG files
+
+**Public Gallery** (components/PublicGallery.tsx + services/supabaseClient.ts):
+- Photos can be pinned to public gallery via Supabase
+- Stores: data_url, caption, frame_style, timestamp, prompt_used, pokemon_id, filter_id
+- Gallery displays photos with original filter and Pokemon card effects
+- Supabase table: `public_photos`

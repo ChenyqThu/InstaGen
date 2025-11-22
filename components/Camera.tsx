@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Language } from '../types';
+import { FilterWheel } from './FilterWheel';
+import { INSTAGRAM_FILTERS, FilterConfig, FILTER_CSS_VALUES } from '../config/filterConfig';
 
 interface CameraProps {
-  onTakePhoto: (dataUrl: string) => void;
+  onTakePhoto: (dataUrl: string, filterId: string) => void;
   lang: Language;
 }
 
@@ -11,6 +13,7 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [streamError, setStreamError] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [currentFilter, setCurrentFilter] = useState<FilterConfig>(INSTAGRAM_FILTERS[0]);
 
   useEffect(() => {
     const startCamera = async () => {
@@ -54,6 +57,10 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
       const xOffset = (video.videoWidth - size) / 2;
       const yOffset = (video.videoHeight - size) / 2;
 
+      // Apply filter to canvas
+      const filterValue = FILTER_CSS_VALUES[currentFilter.id] || 'none';
+      context.filter = filterValue;
+
       // Horizontal flip for mirror effect (selfie mode)
       context.translate(size, 0);
       context.scale(-1, 1);
@@ -64,8 +71,11 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
         0, 0, size, size
       );
 
+      // Reset filter
+      context.filter = 'none';
+
       const dataUrl = canvas.toDataURL('image/png');
-      onTakePhoto(dataUrl);
+      onTakePhoto(dataUrl, currentFilter.id);
     }
   };
 
@@ -93,28 +103,39 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
         </div>
       )}
 
-      {/* Lens / Video Feed
+      {/* Lens / Video Feed with Filter Wheel
           Positioned to match the lens of the Instax Square style camera.
           Adjusted based on actual camera image layout.
       */}
-      <div className="absolute top-[54.5%] left-[62.2%] transform -translate-x-1/2 -translate-y-1/2 w-[43%] h-[43%] rounded-full overflow-hidden bg-[#1a1a1a] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] z-30 ring-4 ring-black/80">
-          {!streamError ? (
-            <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover transform -scale-x-100 opacity-90 hover:opacity-100 transition-opacity"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                <span className="text-xs text-gray-500">No Signal</span>
-            </div>
-          )}
-          
-          {/* Lens Reflection / Gloss */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
-          <div className="absolute top-[15%] right-[15%] w-[10%] h-[5%] bg-white/20 rounded-full rotate-45 blur-[2px] pointer-events-none"></div>
+      <div className="absolute top-[54.5%] left-[62.2%] transform -translate-x-1/2 -translate-y-1/2 w-[43%] h-[43%] z-30">
+          {/* Filter Wheel around the lens */}
+          <FilterWheel
+            currentFilter={currentFilter}
+            onFilterChange={setCurrentFilter}
+            size={180}
+            lang={lang}
+          />
+
+          {/* Video feed with filter applied */}
+          <div className={`absolute inset-0 rounded-full overflow-hidden bg-[#1a1a1a] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] ring-4 ring-black/80 ${currentFilter.className}`}>
+              {!streamError ? (
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover transform -scale-x-100 opacity-90 hover:opacity-100 transition-opacity"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                    <span className="text-xs text-gray-500">No Signal</span>
+                </div>
+              )}
+
+              {/* Lens Reflection / Gloss */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
+              <div className="absolute top-[15%] right-[15%] w-[10%] h-[5%] bg-white/20 rounded-full rotate-45 blur-[2px] pointer-events-none"></div>
+          </div>
       </div>
 
       {/* Shutter Button Hotspot

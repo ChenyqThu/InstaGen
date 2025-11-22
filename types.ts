@@ -22,6 +22,7 @@ export interface PhotoData {
   frameStyle: PhotoFrameStyle;
   promptUsed?: string;
   caption?: string;
+  pokemonId?: string;
 }
 
 export type Language = 'en' | 'zh';

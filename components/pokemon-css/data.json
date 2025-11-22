@@ -1,0 +1,133 @@
+[
+  {
+    "id": "pgo-24",
+    "name": "Holo",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "Basic"
+    ],
+    "number": "24",
+    "rarity": "Rare Holo",
+    "images": {
+      "small": "https://images.pokemontcg.io/pgo/24.png",
+      "large": "https://images.pokemontcg.io/pgo/24_hires.png"
+    }
+  },
+  {
+    "id": "swshp-SWSH039",
+    "name": "Galaxy",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "Basic"
+    ],
+    "number": "SWSH039",
+    "rarity": "Rare Holo Galaxy",
+    "images": {
+      "small": "https://images.pokemontcg.io/swshp/SWSH039.png",
+      "large": "https://images.pokemontcg.io/swshp/SWSH039_hires.png"
+    }
+  },
+  {
+    "id": "swsh7-29",
+    "name": "VMAX",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "VMAX"
+    ],
+    "number": "29",
+    "rarity": "Rare Holo VMAX",
+    "images": {
+      "small": "https://images.pokemontcg.io/swsh7/29.png",
+      "large": "https://images.pokemontcg.io/swsh7/29_hires.png"
+    }
+  },
+  {
+    "id": "swshp-SWSH195",
+    "name": "VSTAR",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "VSTAR"
+    ],
+    "number": "SWSH195",
+    "rarity": "Rare Holo VSTAR",
+    "images": {
+      "small": "https://images.pokemontcg.io/swshp/SWSH195.png",
+      "large": "https://images.pokemontcg.io/swshp/SWSH195_hires.png"
+    }
+  },
+  {
+    "id": "swsh8-250",
+    "name": "Full Art",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "Basic",
+      "V",
+      "Fusion Strike"
+    ],
+    "number": "250",
+    "rarity": "Rare Ultra",
+    "images": {
+      "small": "https://images.pokemontcg.io/swsh8/250.png",
+      "large": "https://images.pokemontcg.io/swsh8/250_hires.png"
+    }
+  },
+  {
+    "id": "swsh3-193",
+    "name": "Rainbow",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "VMAX"
+    ],
+    "number": "193",
+    "rarity": "Rare Rainbow",
+    "images": {
+      "small": "https://images.pokemontcg.io/swsh3/193.png",
+      "large": "https://images.pokemontcg.io/swsh3/193_hires.png"
+    }
+  },
+  {
+    "id": "swsh8-280",
+    "name": "Gold",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "Stage 1"
+    ],
+    "number": "280",
+    "rarity": "Rare Secret",
+    "images": {
+      "small": "https://images.pokemontcg.io/swsh8/280.png",
+      "large": "https://images.pokemontcg.io/swsh8/280_hires.png"
+    }
+  },
+  {
+    "id": "swsh9tg-TG11",
+    "name": "Trainer Gallery",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "Basic"
+    ],
+    "number": "TG11",
+    "rarity": "Rare Holo",
+    "gallery": true,
+    "images": {
+      "small": "https://images.pokemontcg.io/swsh9tg/TG11.png",
+      "large": "https://images.pokemontcg.io/swsh9tg/TG11_hires.png"
+    }
+  },
+  {
+    "id": "swsh9tg-TG16",
+    "name": "Trainer Gallery V",
+    "supertype": "Pokémon",
+    "subtypes": [
+      "Basic",
+      "V"
+    ],
+    "number": "TG16",
+    "rarity": "Rare Holo V",
+    "gallery": true,
+    "images": {
+      "small": "https://images.pokemontcg.io/swsh9tg/TG16.png",
+      "large": "https://images.pokemontcg.io/swsh9tg/TG16_hires.png"
+    }
+  }
+]

@@ -4,6 +4,8 @@ import { EditOption, Language, PhotoData, PhotoFrameStyle, PhotoStatus } from '.
 import { EDIT_OPTIONS, FRAME_STYLES, TRANSLATIONS } from '../constants';
 import { editImageWithGemini } from '../services/geminiService';
 import { PolaroidFrame } from './PolaroidFrame';
+import { PokemonCard } from './pokemon-css/PokemonCard';
+import pokemonData from './pokemon-css/data.json';
 
 interface PhotoModalProps {
   photo: PhotoData;
@@ -25,6 +27,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   const [customPrompt, setCustomPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [tempCaption, setTempCaption] = useState(photo.caption || '');
+  const [selectedPokemonId, setSelectedPokemonId] = useState<string>(photo.pokemonId || pokemonData[0].id);
   const downloadRef = useRef<HTMLDivElement>(null);
   const t = TRANSLATIONS[lang];
 
@@ -127,19 +130,44 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 
         {/* LEFT: Image Preview Area */}
         <div className="flex-1 bg-gray-200/50 flex items-center justify-center p-6 relative overflow-hidden bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
-          <PolaroidFrame
-            dataUrl={photo.dataUrl}
-            caption={tempCaption}
-            timestamp={photo.timestamp}
-            frameStyle={photo.frameStyle}
-            scale={1}
-            editable={true}
-            onCaptionChange={setTempCaption}
-            onCaptionBlur={handleCaptionBlur}
-            isProcessing={isProcessing || photo.status === PhotoStatus.EDITING}
-            promptUsed={photo.promptUsed}
-            lang={lang}
-          />
+          {photo.pokemonId ? (
+            <div className="w-[340px] h-[470px] relative z-10">
+              <PokemonCard
+                {...pokemonData.find(p => p.id === selectedPokemonId)!}
+                img={photo.dataUrl}
+                name={tempCaption || t.defaultCaption}
+                className="w-full h-full"
+              >
+                <PolaroidFrame
+                  dataUrl={photo.dataUrl}
+                  caption={tempCaption}
+                  timestamp={photo.timestamp}
+                  frameStyle={photo.frameStyle}
+                  scale={1}
+                  editable={false}
+                  onCaptionChange={setTempCaption}
+                  onCaptionBlur={handleCaptionBlur}
+                  isProcessing={isProcessing || photo.status === PhotoStatus.EDITING}
+                  promptUsed={photo.promptUsed}
+                  lang={lang}
+                />
+              </PokemonCard>
+            </div>
+          ) : (
+            <PolaroidFrame
+              dataUrl={photo.dataUrl}
+              caption={tempCaption}
+              timestamp={photo.timestamp}
+              frameStyle={photo.frameStyle}
+              scale={1}
+              editable={true}
+              onCaptionChange={setTempCaption}
+              onCaptionBlur={handleCaptionBlur}
+              isProcessing={isProcessing || photo.status === PhotoStatus.EDITING}
+              promptUsed={photo.promptUsed}
+              lang={lang}
+            />
+          )}
         </div>
 
         {/* RIGHT: Controls Area */}
@@ -160,6 +188,68 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
                   />
                 ))}
               </div>
+            </div>
+
+            {/* Card Effect Selector */}
+            <div className="mb-8">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Card Effect</h3>
+              <div className="grid grid-cols-4 gap-2">
+                {/* None option */}
+                <button
+                  onClick={() => {
+                    setSelectedPokemonId('');
+                    onUpdate(photo.id, { pokemonId: undefined });
+                  }}
+                  className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${!photo.pokemonId ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                    }`}
+                  title="None"
+                >
+                  <div className="w-full h-full relative">
+                    <img
+                      src="/assets/previews/original.png"
+                      alt="None"
+                      className="w-full h-full object-cover object-top"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] font-bold py-0.5 px-1 text-center truncate">
+                      None
+                    </div>
+                  </div>
+                </button>
+
+                {/* Pokemon effect options */}
+                {pokemonData.map((card) => (
+                  <button
+                    key={card.id}
+                    onClick={() => {
+                      setSelectedPokemonId(card.id);
+                      onUpdate(photo.id, { pokemonId: card.id });
+                    }}
+                    className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${selectedPokemonId === card.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                      }`}
+                    title={card.name}
+                  >
+                    <div className="w-full h-full relative">
+                      <PokemonCard
+                        {...card}
+                        img="/assets/previews/original.png"
+                        name=""
+                        className="w-full h-full"
+                      >
+                        <img
+                          src="/assets/previews/original.png"
+                          alt={card.name}
+                          className="w-full h-full object-cover object-top"
+                        />
+                      </PokemonCard>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] font-bold py-0.5 px-1 text-center truncate">
+                      {card.name}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+
             </div>
 
             {/* Magic Edit Section */}
@@ -270,17 +360,42 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 
       {/* Hidden polaroid for download - High resolution (3x) */}
       <div className="fixed -left-[9999px] top-0">
-        <PolaroidFrame
-          ref={downloadRef}
-          dataUrl={photo.dataUrl}
-          caption={tempCaption} // Use tempCaption to ensure real-time sync
-          timestamp={photo.timestamp}
-          frameStyle={photo.frameStyle}
-          scale={3} // High resolution scale
-          editable={false}
-          promptUsed={photo.promptUsed}
-          lang={lang}
-        />
+        {photo.pokemonId ? (
+          <div style={{ width: '900px', height: '1260px' }}>
+            <PokemonCard
+              ref={downloadRef}
+              {...pokemonData.find(p => p.id === selectedPokemonId)!}
+              img={photo.dataUrl}
+              name={tempCaption || t.defaultCaption}
+              className="w-full h-full"
+              // Scale up text if needed for high-res export
+              style={{ fontSize: '3em' }}
+            >
+              <PolaroidFrame
+                dataUrl={photo.dataUrl}
+                caption={tempCaption}
+                timestamp={photo.timestamp}
+                frameStyle={photo.frameStyle}
+                scale={3}
+                editable={false}
+                promptUsed={photo.promptUsed}
+                lang={lang}
+              />
+            </PokemonCard>
+          </div>
+        ) : (
+          <PolaroidFrame
+            ref={downloadRef}
+            dataUrl={photo.dataUrl}
+            caption={tempCaption} // Use tempCaption to ensure real-time sync
+            timestamp={photo.timestamp}
+            frameStyle={photo.frameStyle}
+            scale={3} // High resolution scale
+            editable={false}
+            promptUsed={photo.promptUsed}
+            lang={lang}
+          />
+        )}
       </div>
     </div>
   );

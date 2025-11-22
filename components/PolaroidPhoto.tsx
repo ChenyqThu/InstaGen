@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Language, PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
 import { FRAME_STYLES, TRANSLATIONS } from '../constants';
+import { PokemonCard } from './pokemon-css/PokemonCard';
+import pokemonData from './pokemon-css/data.json';
 
 interface PolaroidPhotoProps {
   photo: PhotoData;
@@ -110,6 +112,8 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
 
   const frameClass = FRAME_STYLES[photo.frameStyle] || FRAME_STYLES[PhotoFrameStyle.CLASSIC];
 
+  const selectedPokemon = pokemonData.find(p => p.id === photo.pokemonId) || pokemonData[0];
+
   return (
     <div
       className={`absolute cursor-move ${getAnimationClass()} ${isDragging ? 'scale-105 z-50' : 'z-0'}`}
@@ -130,70 +134,146 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className={`w-full p-[10px] pb-[55px] ${frameClass} transition-colors duration-300 relative group`}>
-        {/* Image Area */}
-        <div className="w-full h-[170px] overflow-hidden relative border border-gray-200">
-          <img
-            src={photo.dataUrl}
-            alt="Polaroid"
-            className={`w-full h-full object-cover select-none pointer-events-none ${photo.status === PhotoStatus.DEVELOPING ? 'animate-develop' : ''}`}
-          />
-          {photo.status === PhotoStatus.EDITING && (
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      {photo.pokemonId ? (
+        <div className="w-full h-[210px]">
+          <PokemonCard
+            {...selectedPokemon}
+            img={photo.dataUrl}
+            name={photo.caption || t.defaultCaption}
+            className="w-full h-full"
+          >
+            <div className={`w-full p-[10px] pb-[55px] ${FRAME_STYLES[photo.frameStyle]} transition-colors duration-300 relative group`}>
+              {/* Image Area */}
+              <div className="w-full h-[170px] overflow-hidden relative border border-gray-200">
+                <img
+                  src={photo.dataUrl}
+                  alt="Polaroid"
+                  className={`w-full h-full object-cover select-none pointer-events-none ${photo.status === PhotoStatus.DEVELOPING ? 'animate-develop' : ''}`}
+                />
+                {photo.status === PhotoStatus.EDITING && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                  </div>
+                )}
+              </div>
+
+              {/* Caption - Editable text */}
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                className="absolute bottom-[26px] left-[10px] right-[10px] text-center font-hand text-[14px] text-[#222] opacity-90 leading-[1.1] outline-none cursor-text min-h-[18px]"
+                style={{
+                  WebkitUserSelect: 'text',
+                  userSelect: 'text'
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
+                onInput={(e) => {
+                  const target = e.currentTarget;
+                  const text = target.textContent || '';
+                  if (text.length > 30) {
+                    const trimmed = text.slice(0, 30);
+                    target.textContent = trimmed;
+                    // Move cursor to end
+                    const range = document.createRange();
+                    const sel = window.getSelection();
+                    range.selectNodeContents(target);
+                    range.collapse(false);
+                    sel?.removeAllRanges();
+                    sel?.addRange(range);
+                  }
+                  onUpdate(photo.id, { caption: target.textContent || undefined });
+                }}
+                onBlur={(e) => {
+                  if (!e.currentTarget.textContent?.trim()) {
+                    e.currentTarget.textContent = photo.caption || t.defaultCaption;
+                  }
+                }}
+              >
+                {photo.caption || t.defaultCaption}
+              </div>
+
+              {/* Date - Bottom of frame */}
+              <div className="absolute bottom-2 left-[10px] right-[10px] text-center font-hand text-[10px] select-none text-[#555] leading-[1.1] pointer-events-none">
+                {formatDate(photo.timestamp)}
+              </div>
+
+              {/* AI Badge - Bottom left if edited */}
+              {photo.promptUsed && (
+                <div className="absolute bottom-2 left-2 text-xs opacity-60 pointer-events-none">🪄</div>
+              )}
             </div>
+          </PokemonCard>
+        </div>
+      ) : (
+        <div className={`w-full p-[10px] pb-[55px] ${frameClass} transition-colors duration-300 relative group`}>
+          {/* Image Area */}
+          <div className="w-full h-[170px] overflow-hidden relative border border-gray-200">
+            <img
+              src={photo.dataUrl}
+              alt="Polaroid"
+              className={`w-full h-full object-cover select-none pointer-events-none ${photo.status === PhotoStatus.DEVELOPING ? 'animate-develop' : ''}`}
+            />
+            {photo.status === PhotoStatus.EDITING && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              </div>
+            )}
+          </div>
+
+          {/* Caption - Editable text */}
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            className="absolute bottom-[26px] left-[10px] right-[10px] text-center font-hand text-[14px] text-[#222] opacity-90 leading-[1.1] outline-none cursor-text min-h-[18px]"
+            style={{
+              WebkitUserSelect: 'text',
+              userSelect: 'text'
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+              }
+            }}
+            onInput={(e) => {
+              const target = e.currentTarget;
+              const text = target.textContent || '';
+              if (text.length > 30) {
+                const trimmed = text.slice(0, 30);
+                target.textContent = trimmed;
+                // Move cursor to end
+                const range = document.createRange();
+                const sel = window.getSelection();
+                range.selectNodeContents(target);
+                range.collapse(false);
+                sel?.removeAllRanges();
+                sel?.addRange(range);
+              }
+              onUpdate(photo.id, { caption: target.textContent || undefined });
+            }}
+            onBlur={(e) => {
+              if (!e.currentTarget.textContent?.trim()) {
+                e.currentTarget.textContent = photo.caption || t.defaultCaption;
+              }
+            }}
+          >
+            {photo.caption || t.defaultCaption}
+          </div>
+
+          {/* Date - Bottom of frame */}
+          <div className="absolute bottom-2 left-[10px] right-[10px] text-center font-hand text-[10px] select-none text-[#555] leading-[1.1] pointer-events-none">
+            {formatDate(photo.timestamp)}
+          </div>
+
+          {/* AI Badge - Bottom left if edited */}
+          {photo.promptUsed && (
+            <div className="absolute bottom-2 left-2 text-xs opacity-60 pointer-events-none">🪄</div>
           )}
         </div>
-        
-        {/* Caption - Editable text */}
-        <div
-          contentEditable
-          suppressContentEditableWarning
-          className="absolute bottom-[26px] left-[10px] right-[10px] text-center font-hand text-[14px] text-[#222] opacity-90 leading-[1.1] outline-none cursor-text min-h-[18px]"
-          style={{
-            WebkitUserSelect: 'text',
-            userSelect: 'text'
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-            }
-          }}
-          onInput={(e) => {
-            const target = e.currentTarget;
-            const text = target.textContent || '';
-            if (text.length > 30) {
-              const trimmed = text.slice(0, 30);
-              target.textContent = trimmed;
-              // Move cursor to end
-              const range = document.createRange();
-              const sel = window.getSelection();
-              range.selectNodeContents(target);
-              range.collapse(false);
-              sel?.removeAllRanges();
-              sel?.addRange(range);
-            }
-            onUpdate(photo.id, { caption: target.textContent || undefined });
-          }}
-          onBlur={(e) => {
-            if (!e.currentTarget.textContent?.trim()) {
-              e.currentTarget.textContent = photo.caption || t.defaultCaption;
-            }
-          }}
-        >
-          {photo.caption || t.defaultCaption}
-        </div>
-
-        {/* Date - Bottom of frame */}
-        <div className="absolute bottom-2 left-[10px] right-[10px] text-center font-hand text-[10px] select-none text-[#555] leading-[1.1] pointer-events-none">
-          {formatDate(photo.timestamp)}
-        </div>
-
-        {/* AI Badge - Bottom left if edited */}
-        {photo.promptUsed && (
-          <div className="absolute bottom-2 left-2 text-xs opacity-60 pointer-events-none">🪄</div>
-        )}
-      </div>
+      )}
 
       {/* Edit/Expand Button (Visible on hover only) - Outside frame */}
       <div className={`absolute -top-3 -right-3 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>

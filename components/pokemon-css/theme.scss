@@ -1,0 +1,159 @@
+:root {
+    --mx: 50%;
+    --my: 50%;
+    --s: 1;
+    --o: 0;
+    --tx: 0px;
+    --ty: 0px;
+    --rx: 0deg;
+    --ry: 0deg;
+    --pos: 50% 50%;
+    --posx: 50%;
+    --posy: 50%;
+    --hyp: 0;
+    --galaxybg: center;
+}
+
+.card {
+    --radius: 4.55% / 3.5%;
+    --back: #004177;
+    --glow: #69d1e9;
+    z-index: calc(var(--s) * 100);
+    transform: translate3d(0, 0, 0.1px);
+    will-change: transform, visibility;
+    transform-style: preserve-3d;
+    width: 100%;
+    height: 100%;
+
+    &.interacting {
+        z-index: calc(var(--s) * 120);
+    }
+
+    &.active {
+
+        .card__translater,
+        .card__rotator {
+            touch-action: none;
+        }
+
+        .card__rotator {
+            box-shadow: 0 0 10px 0px var(--glow), 0 0 10px 0px var(--glow),
+                0 0 30px 0px var(--glow);
+        }
+
+        .card__rotator:focus {
+            box-shadow: 0px 10px 30px 3px black;
+        }
+    }
+
+    &.loading {
+        .card__front {
+            opacity: 0;
+        }
+
+        .card__back {
+            transform: rotateY(0deg);
+        }
+    }
+}
+
+.card__translater,
+.card__rotator {
+    display: grid;
+    perspective: 600px;
+    transform-origin: center;
+    -webkit-transform-origin: center;
+    will-change: transform;
+}
+
+.card__translater {
+    width: auto;
+    position: relative;
+    transform: translate3d(var(--tx), var(--ty), 0) scale(var(--s));
+    -webkit-transform: translate3d(var(--tx), var(--ty), 0) scale(var(--s));
+}
+
+.card__rotator {
+    transform: rotateY(var(--rx)) rotateX(var(--ry));
+    transform-style: preserve-3d;
+    box-shadow: 0px 10px 20px -5px black;
+    border-radius: 0;
+    /* Make square */
+    outline: none;
+    transition: box-shadow 0.4s ease,
+        outline 0.2s ease;
+    appearance: none;
+    border: none;
+    background: top;
+    padding: 0;
+
+    &:focus {
+        box-shadow: 0 0 10px 0px var(--glow), 0 0 10px 0px var(--glow),
+            0 0 30px 0px var(--glow);
+    }
+}
+
+
+/* Remove wildcard grid selector that breaks Polaroid layout */
+/* * { ... } */
+
+.card__front {
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* Ensure block display */
+    border-radius: 0;
+    image-rendering: optimizeQuality;
+    transform-style: preserve-3d;
+}
+
+img {
+    outline: 1px solid transparent;
+    height: 100%;
+    width: 100%;
+    object-fit: fill;
+}
+
+.card__back {
+    background-color: var(--back);
+    transform: rotateY(180deg) translateZ(1px);
+    backface-visibility: visible;
+}
+
+.card__front {
+    opacity: 1;
+    transition: opacity 0.33s ease-out;
+    transform: translateZ(1px);
+}
+
+.card__shine {
+    display: grid;
+    transform: translateZ(1px);
+    background: transparent;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    mix-blend-mode: color-dodge;
+    filter: brightness(.85) contrast(2.75) saturate(.65);
+    background-size: cover;
+    background-position: center;
+    opacity: var(--o);
+    pointer-events: none;
+}
+
+.card__glare {
+    transform: translateZ(1.4px);
+    background: radial-gradient(farthest-corner circle at var(--mx) var(--my), rgba(255, 255, 255, 0.8) 10%, rgba(255, 255, 255, 0.65) 20%, rgba(0, 0, 0, 0.5) 90%);
+    mix-blend-mode: overlay;
+    opacity: var(--o);
+    z-index: 4;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}

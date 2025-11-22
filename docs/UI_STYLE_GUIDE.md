@@ -496,3 +496,31 @@ transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)]
   }
 }
 ```
+
+---
+
+## 国际化规范 (i18n)
+
+### 文本处理
+1.  **硬编码**: 严禁在组件代码中硬编码显示文本。
+2.  **常量引用**: 所有文本必须引用 `constants.ts` 中的 `TRANSLATIONS`。
+3.  **变量命名**: 使用 `t` 作为翻译对象的简写变量名，例如 `const t = TRANSLATIONS[lang];`。
+
+### 示例
+```tsx
+// ❌ 错误示范
+<button>Login</button>
+
+// ✅ 正确示范
+import { TRANSLATIONS } from '../constants';
+
+const MyComponent = ({ lang }) => {
+  const t = TRANSLATIONS[lang];
+  return <button>{t.login}</button>;
+};
+```
+
+### 字体适配
+- 中文环境优先使用系统默认无衬线字体。
+- 英文环境保持设计稿指定的 `Inter` 或手写字体。
+- 确保布局在不同语言长度下保持整洁（中文通常较短，英文较长）。

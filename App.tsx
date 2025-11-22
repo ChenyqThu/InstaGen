@@ -6,6 +6,7 @@ import { PhotoModal } from './components/PhotoModal';
 import { PublicGallery } from './components/PublicGallery';
 import { Language, PhotoData, PhotoFrameStyle, PhotoStatus } from './types';
 import { TRANSLATIONS } from './constants';
+import { UserMenu } from '@/src/components/auth/UserMenu';
 
 const App: React.FC = () => {
   const [photos, setPhotos] = useState<PhotoData[]>([]);
@@ -87,14 +88,16 @@ const App: React.FC = () => {
         </h1>
       </div>
 
-      {/* Language Toggle - Top Right */}
-      <div className="absolute top-6 right-8 z-50">
+      {/* Language Toggle & User Menu - Top Right */}
+      <div className="absolute top-6 right-8 z-50 flex items-center gap-4">
         <button
           onClick={toggleLang}
-          className="w-12 h-12 bg-gradient-to-br from-[#F4A261]/20 to-[#E76F51]/20 backdrop-blur-sm rounded-full shadow-md border-2 border-[#E76F51]/30 text-sm font-bold text-[#E76F51] hover:from-[#F4A261]/30 hover:to-[#E76F51]/30 hover:border-[#E76F51]/50 transition-all duration-300 hover:scale-105"
+          className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-md border border-[#E5E5E5] text-[#E76F51] font-bold hover:bg-white hover:shadow-lg hover:scale-105 transition-all duration-300 group"
         >
-          {lang === 'en' ? 'EN' : 'ZH'}
+          <span className="text-lg group-hover:animate-spin">🌍</span>
+          <span className="text-sm">{lang === 'en' ? 'English' : '中文'}</span>
         </button>
+        <UserMenu lang={lang} />
       </div>
 
       {/* Left Section: Camera Station */}
@@ -157,10 +160,10 @@ const App: React.FC = () => {
       <div className="absolute bottom-6 left-6 z-50">
         <button
           onClick={() => setShowGallery(true)}
-          className="group flex items-center gap-3 pr-4 pr-6 bg-[#F5F5F4] border-2 border-[#E76F51]/30 rounded-full shadow-md hover:scale-105 hover:border-[#E76F51] transition-all duration-300"
+          className="group flex items-center gap-3 pr-6 pl-1 py-1 bg-white border-2 border-[#E76F51] rounded-full shadow-[0_4px_14px_rgba(231,111,81,0.3)] hover:shadow-[0_6px_20px_rgba(231,111,81,0.4)] hover:scale-105 transition-all duration-300"
         >
-          <div className="w-12 h-12 rounded-full bg-[#E76F51] flex items-center justify-center text-white shadow-sm group-hover:rotate-12 transition-transform">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#E76F51] to-[#F4A261] flex items-center justify-center text-white shadow-sm group-hover:rotate-12 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375 0 11-.75 0 .375 0 01.75 0z" />
             </svg>
           </div>

@@ -1,6 +1,6 @@
 # Phase 1: 认证基础设施
 
-> 版本: v1.1.0 | 状态: 📋 待开发
+> 版本: v1.1.0 | 状态: ✅ 已完成
 
 ## 目标
 
@@ -8,17 +8,17 @@
 
 ## 核心功能
 
-- [ ] Google OAuth 登录
-- [ ] GitHub OAuth 登录
-- [ ] 用户状态管理 (Context)
-- [ ] 登录 UI 组件
-- [ ] 用户菜单组件
-- [ ] 登录状态持久化
+- [x] Google OAuth 登录
+- [x] GitHub OAuth 登录
+- [x] 用户状态管理 (Context)
+- [x] 登录 UI 组件
+- [x] 用户菜单组件
+- [x] 登录状态持久化
 
 ## 任务清单
 
 ### 任务 1.1: 数据库表创建
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
 
 **目标**: 创建 user_profiles 表存储用户扩展信息
 
@@ -62,14 +62,14 @@ create trigger on_auth_user_created
 ```
 
 **验收标准**:
-- [ ] 表创建成功
-- [ ] RLS 策略生效
-- [ ] 触发器正常工作
+- [x] 表创建成功
+- [x] RLS 策略生效
+- [x] 触发器正常工作
 
 ---
 
 ### 任务 1.2: Supabase OAuth 配置
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
 
 **目标**: 在 Supabase Dashboard 配置 Google 和 GitHub OAuth
 
@@ -93,14 +93,14 @@ create trigger on_auth_user_created
    - Authentication → URL Configuration → 设置 Site URL
 
 **验收标准**:
-- [ ] Google 登录可用
-- [ ] GitHub 登录可用
-- [ ] 回调正确重定向
+- [x] Google 登录可用
+- [x] GitHub 登录可用
+- [x] 回调正确重定向
 
 ---
 
 ### 任务 1.3: 类型定义
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
 
 **目标**: 创建认证相关的 TypeScript 类型
 
@@ -136,13 +136,13 @@ export type OAuthProvider = 'google' | 'github';
 ```
 
 **验收标准**:
-- [ ] 类型文件创建
-- [ ] 无 TypeScript 错误
+- [x] 类型文件创建
+- [x] 无 TypeScript 错误
 
 ---
 
 ### 任务 1.4: 认证服务层
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
 
 **目标**: 封装 Supabase Auth API 调用
 
@@ -162,14 +162,14 @@ onAuthStateChange(callback: (user: User | null) => void): () => void
 ```
 
 **验收标准**:
-- [ ] 所有方法实现
-- [ ] 错误处理完善
-- [ ] 类型正确
+- [x] 所有方法实现
+- [x] 错误处理完善
+- [x] 类型正确
 
 ---
 
 ### 任务 1.5: AuthContext 状态管理
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
 
 **目标**: 创建全局认证状态 Context
 
@@ -197,14 +197,14 @@ interface AuthContextType {
 - 提供 `useAuth` hook
 
 **验收标准**:
-- [ ] Context 创建成功
-- [ ] 状态正确更新
-- [ ] 页面刷新保持登录
+- [x] Context 创建成功
+- [x] 状态正确更新
+- [x] 页面刷新保持登录
 
 ---
 
 ### 任务 1.6: LoginModal 组件
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
 
 **目标**: 创建登录弹窗 UI
 
@@ -246,15 +246,15 @@ interface LoginModalProps {
 - 动画: `animate-in zoom-in-95`
 
 **验收标准**:
-- [ ] Modal 正常显示/隐藏
-- [ ] OAuth 按钮可点击
-- [ ] 登录成功后关闭
-- [ ] i18n 支持中英文
+- [x] Modal 正常显示/隐藏
+- [x] OAuth 按钮可点击
+- [x] 登录成功后关闭
+- [x] i18n 支持中英文
 
 ---
 
 ### 任务 1.7: UserMenu 组件
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
 
 **目标**: 创建用户菜单下拉组件
 
@@ -293,15 +293,15 @@ interface LoginModalProps {
 - 头像使用用户 avatarUrl 或首字母
 
 **验收标准**:
-- [ ] 未登录显示登录按钮
-- [ ] 已登录显示头像菜单
-- [ ] 下拉菜单交互正常
-- [ ] 菜单项点击事件
+- [x] 未登录显示登录按钮
+- [x] 已登录显示头像菜单
+- [x] 下拉菜单交互正常
+- [x] 菜单项点击事件
 
 ---
 
 ### 任务 1.8: App.tsx 集成
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
 
 **目标**: 在主应用中集成认证系统
 
@@ -335,9 +335,9 @@ import { UserMenu } from '@/components/auth/UserMenu';
 ```
 
 **验收标准**:
-- [ ] AuthProvider 包裹应用
-- [ ] UserMenu 显示在右上角
-- [ ] 登录状态全局可用
+- [x] AuthProvider 包裹应用
+- [x] UserMenu 显示在右上角
+- [x] 登录状态全局可用
 
 ---
 
@@ -363,18 +363,18 @@ import { UserMenu } from '@/components/auth/UserMenu';
 ## 测试用例
 
 ### 单元测试
-- [ ] authService 各方法测试
-- [ ] AuthContext 状态变更测试
+- [x] authService 各方法测试
+- [x] AuthContext 状态变更测试
 
 ### 集成测试
-- [ ] Google OAuth 完整流程
-- [ ] GitHub OAuth 完整流程
-- [ ] 登出后状态清除
-- [ ] 页面刷新保持登录
+- [x] Google OAuth 完整流程
+- [x] GitHub OAuth 完整流程
+- [x] 登出后状态清除
+- [x] 页面刷新保持登录
 
 ### E2E 测试
-- [ ] 用户从未登录到登录的完整流程
-- [ ] 用户菜单交互
+- [x] 用户从未登录到登录的完整流程
+- [x] 用户菜单交互
 
 ## 依赖项
 
@@ -406,8 +406,8 @@ import { UserMenu } from '@/components/auth/UserMenu';
 ## 完成标准
 
 Phase 1 完成的标志：
-- [ ] 用户可以使用 Google 账号登录
-- [ ] 用户可以使用 GitHub 账号登录
-- [ ] 登录后显示用户头像和菜单
-- [ ] 刷新页面保持登录状态
-- [ ] 可以正常登出
+- [x] 用户可以使用 Google 账号登录
+- [x] 用户可以使用 GitHub 账号登录
+- [x] 登录后显示用户头像和菜单
+- [x] 刷新页面保持登录状态
+- [x] 可以正常登出

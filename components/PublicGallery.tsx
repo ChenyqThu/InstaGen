@@ -70,13 +70,15 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
             />
 
             {/* Header */}
-            <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-md border-b border-stone-200 z-10 shadow-sm">
-                <h2 className="text-2xl font-bold font-hand text-stone-800">
-                    {t.publicPinboard} <span className="text-stone-400 text-sm font-sans font-normal ml-2">{t.globalGallery}</span>
+            <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-md border-b border-[#E5E5E5] z-10 shadow-sm">
+                <h2 className="text-2xl font-bold font-hand text-[#1F2937] flex items-center gap-2">
+                    <span className="text-3xl">🎨</span>
+                    {t.publicPinboard}
+                    <span className="text-[#9CA3AF] text-sm font-sans font-normal ml-2 px-3 py-1 bg-[#F5F5F4] rounded-full border border-[#E5E5E5]">{t.globalGallery}</span>
                 </h2>
                 <button
                     onClick={onClose}
-                    className="w-10 h-10 flex items-center justify-center rounded-full bg-stone-100 hover:bg-stone-200 transition-colors text-stone-600"
+                    className="w-10 h-10 flex items-center justify-center rounded-full bg-[#F5F5F4] hover:bg-[#E5E5E5] transition-colors text-[#374151]"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -142,8 +144,9 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
                             );
                         })}
                         {photos.length === 0 && (
-                            <div className="col-span-full text-center text-stone-400 py-20">
-                                {t.emptyGallery}
+                            <div className="col-span-full flex flex-col items-center justify-center text-[#9CA3AF] py-20 gap-4">
+                                <div className="text-6xl">🖼️</div>
+                                <p className="text-lg">{t.emptyGallery}</p>
                             </div>
                         )}
                     </div>

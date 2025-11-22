@@ -384,8 +384,8 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
               onClick={async () => {
                 try {
                   setIsProcessing(true);
-                  const { pinPhotoToPublic } = await import('../services/supabaseClient');
-                  await pinPhotoToPublic(photo);
+                  const { photoService } = await import('../src/services/photoService');
+                  await photoService.pinPhotoToPublic(photo);
                   alert(t.pinSuccess);
                 } catch (error) {
                   console.error(error);

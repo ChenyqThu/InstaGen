@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
-import { fetchPublicPhotos } from '../services/supabaseClient';
+import { photoService } from '../src/services/photoService';
 import { PolaroidFrame } from './PolaroidFrame';
 import { PokemonCard } from './pokemon-css/PokemonCard';
 import pokemonData from './pokemon-css/data.json';
@@ -27,7 +27,7 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
     const loadPhotos = async () => {
         setLoading(true);
         try {
-            const data = await fetchPublicPhotos();
+            const data = await photoService.fetchPublicPhotos();
             // Map Supabase data to PhotoData
             const mappedPhotos: PhotoData[] = data.map((p: any) => ({
                 id: p.id,

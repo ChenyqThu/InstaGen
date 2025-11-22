@@ -6,7 +6,9 @@ export const authService = {
         const { error } = await supabase.auth.signInWithOAuth({
             provider,
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                // Redirect to origin root - Supabase will handle the hash fragment
+                // with detectSessionInUrl: true in supabaseClient config
+                redirectTo: window.location.origin,
             },
         });
         if (error) throw error;
@@ -39,9 +41,12 @@ export const authService = {
     },
 
     async getCurrentUser(): Promise<User | null> {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return null;
+        // Use getSession() instead of getUser() - it reads from localStorage
+        // and auto-refreshes expired tokens, ensuring session persistence
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return null;
 
+        const user = session.user;
         const profile = await this.getUserProfile(user.id);
 
         return {

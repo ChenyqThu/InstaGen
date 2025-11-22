@@ -180,5 +180,38 @@ export const photoService = {
 
         if (error) throw error;
         return data;
+    },
+
+    /**
+     * Fetch all public photos for the gallery
+     */
+    async fetchPublicPhotos() {
+        const { data, error } = await supabase
+            .from('public_photos')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(50);
+
+        if (error) throw error;
+        return data || [];
+    },
+
+    /**
+     * Pin a photo directly to public gallery (without saving to user_photos first)
+     */
+    async pinPhotoToPublic(photo: PhotoData) {
+        const { error } = await supabase
+            .from('public_photos')
+            .insert({
+                data_url: photo.dataUrl,
+                caption: photo.caption,
+                frame_style: photo.frameStyle,
+                timestamp: photo.timestamp,
+                prompt_used: photo.promptUsed,
+                pokemon_id: photo.pokemonId,
+                filter_id: photo.filterId,
+            });
+
+        if (error) throw error;
     }
 };

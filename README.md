@@ -49,4 +49,27 @@ The holographic effects are powered by CSS blend modes, gradients, and 3D transf
 - **Frontend**: React + TypeScript + Vite
 - **Styling**: Tailwind CSS + SCSS (for Pokemon card effects)
 - **AI**: Google Gemini API for image generation and editing
+- **Database**: Supabase (PostgreSQL)
 - **3D Effects**: CSS transforms, blend modes, and custom properties
+
+## Roadmap
+
+> 详细开发文档请查看 [docs/](./docs/)
+
+### v1.1.0 - 用户认证
+- [ ] Google / GitHub OAuth 登录
+- [ ] 用户状态管理
+- [ ] 登录 UI 组件
+
+### v1.2.0 - 个人照片库
+- [ ] 照片云端保存
+- [ ] 个人卡片库界面
+- [ ] 分享到公共画廊
+
+### v1.3.0 - 账户管理
+- [ ] 账户设置页面
+- [ ] 自定义 Gemini API Key
+
+### v1.4.0 - 使用限制
+- [ ] Magic Edit 每日配额 (3次/天)
+- [ ] 自定义 Key 无限使用

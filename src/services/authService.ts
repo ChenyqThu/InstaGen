@@ -67,7 +67,10 @@ export const authService = {
             .single();
 
         if (error) {
-            console.error('Error fetching user profile:', error);
+            // PGRST116 means no rows found, which is not an error for new users
+            if (error.code !== 'PGRST116') {
+                console.error('Error fetching user profile:', error);
+            }
             return null;
         }
         return data;
@@ -88,12 +91,41 @@ export const authService = {
     },
 
     onAuthStateChange(callback: (user: User | null) => void) {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-                const user = await this.getCurrentUser();
-                callback(user);
-            } else if (event === 'SIGNED_OUT') {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            // IMPORTANT: Do NOT await Supabase calls directly in this callback!
+            // It causes a deadlock (see: https://github.com/supabase/gotrue-js/issues/762)
+            // Use setTimeout to defer async work after callback completes.
+
+            if (event === 'SIGNED_OUT') {
                 callback(null);
+                return;
+            }
+
+            if (session?.user) {
+                const user = session.user;
+                // Immediately set basic user info from session
+                const basicUser = {
+                    id: user.id,
+                    email: user.email!,
+                    displayName: user.user_metadata.full_name || user.user_metadata.name || null,
+                    avatarUrl: user.user_metadata.avatar_url || null,
+                    customGeminiKey: null as string | null,
+                    createdAt: user.created_at,
+                };
+                callback(basicUser);
+
+                // Defer profile loading to avoid deadlock
+                setTimeout(async () => {
+                    const profile = await this.getUserProfile(user.id);
+                    if (profile) {
+                        callback({
+                            ...basicUser,
+                            displayName: profile.display_name || basicUser.displayName,
+                            avatarUrl: profile.avatar_url || basicUser.avatarUrl,
+                            customGeminiKey: profile.custom_gemini_key || null,
+                        });
+                    }
+                }, 0);
             }
         });
 

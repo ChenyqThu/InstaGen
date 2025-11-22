@@ -210,7 +210,8 @@ export const signInWithOAuth = async (provider: 'google' | 'github') => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      // Redirect to origin root - Supabase handles hash fragment
+      redirectTo: window.location.origin,
     },
   });
   if (error) throw error;
@@ -243,11 +244,11 @@ export const signOut = async () => {
   if (error) throw error;
 };
 
-// 获取当前用户
+// 获取当前用户 (使用 getSession 确保 token 自动刷新)
 export const getCurrentUser = async () => {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  return user;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return null;
+  return session.user;
 };
 
 // 获取用户配置
@@ -261,15 +262,29 @@ export const getUserProfile = async (userId: string) => {
   return data;
 };
 
-// 更新用户配置
-export const updateUserProfile = async (userId: string, updates: ProfileUpdate) => {
-  const { data, error } = await supabase
-    .from('user_profiles')
-    .upsert({ id: userId, ...updates, updated_at: new Date().toISOString() })
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+// 监听认证状态变化
+// 重要：回调中不能直接 await Supabase 调用，会导致死锁
+// 参考: https://github.com/supabase/gotrue-js/issues/762
+export const onAuthStateChange = (callback) => {
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      callback(null);
+      return;
+    }
+
+    if (session?.user) {
+      // 立即返回基本用户信息
+      callback(buildUserFromSession(session.user));
+
+      // 延迟加载 profile，避免死锁
+      setTimeout(async () => {
+        const profile = await getUserProfile(session.user.id);
+        if (profile) {
+          callback(buildUserWithProfile(session.user, profile));
+        }
+      }, 0);
+    }
+  });
 };
 ```
 
@@ -344,12 +359,20 @@ create trigger on_auth_user_created
 
 ### 回调 URL 配置
 
-```
-# 本地开发
-http://localhost:3000/auth/callback
+OAuth 登录使用 `window.location.origin` 动态获取当前域名，确保本地开发和生产环境都能正常工作。
 
-# 生产环境
-https://your-domain.com/auth/callback
+**Supabase Dashboard 配置** (Authentication → URL Configuration → Redirect URLs):
+
+```
+# 添加以下 URL
+https://instagen.chenge.ink
+https://localhost:3000
+```
+
+**Google Cloud Console** (OAuth 2.0 Client ID → Authorized redirect URIs):
+
+```
+https://<your-project-ref>.supabase.co/auth/v1/callback
 ```
 
 ## 使用示例
@@ -414,3 +437,47 @@ function MagicEditButton({ onEdit }) {
 3. **RLS 策略**: 确保用户只能访问自己的数据
 4. **敏感数据**: 自定义 API Key 应加密存储
 5. **错误处理**: 不暴露敏感的错误信息给用户
+
+## Session 持久化
+
+### 关键配置
+
+Supabase 客户端配置 (supabaseClient.ts):
+
+```typescript
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        storage: window.localStorage,      // 使用 localStorage 持久化
+        autoRefreshToken: true,            // 自动刷新 token
+        persistSession: true,              // 持久化 session
+        detectSessionInUrl: true,          // 检测 URL 中的 OAuth 回调
+    },
+});
+```
+
+### 已知问题与解决方案
+
+**问题**: 在 `onAuthStateChange` 回调中直接 await Supabase API 调用会导致死锁。
+
+**原因**: Supabase JS 客户端内部使用自定义 fetch 方法，在回调中调用会形成循环等待。
+
+**解决方案**: 使用 `setTimeout(fn, 0)` 延迟执行异步操作，让回调先完成。
+
+```typescript
+// ❌ 错误写法 - 会导致死锁
+onAuthStateChange(async (event, session) => {
+  const profile = await getUserProfile(session.user.id);  // 卡住!
+});
+
+// ✅ 正确写法 - 延迟执行
+onAuthStateChange((event, session) => {
+  callback(basicUser);  // 立即返回基本信息
+
+  setTimeout(async () => {
+    const profile = await getUserProfile(session.user.id);
+    callback(userWithProfile);  // 更新完整信息
+  }, 0);
+});
+```
+
+**参考**: [supabase/gotrue-js#762](https://github.com/supabase/gotrue-js/issues/762)

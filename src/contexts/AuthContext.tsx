@@ -41,18 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [state, dispatch] = useReducer(authReducer, initialState);
 
     useEffect(() => {
-        const initAuth = async () => {
-            try {
-                const user = await authService.getCurrentUser();
-                dispatch({ type: 'SET_USER', payload: user });
-            } catch (error) {
-                console.error('Auth initialization error:', error);
-                dispatch({ type: 'SET_ERROR', payload: error as Error });
-            }
-        };
-
-        initAuth();
-
+        // onAuthStateChange handles all auth events including session restoration on page load
         const unsubscribe = authService.onAuthStateChange((user) => {
             dispatch({ type: 'SET_USER', payload: user });
         });

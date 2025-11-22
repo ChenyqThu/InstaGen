@@ -6,6 +6,8 @@ import { editImageWithGemini } from '../services/geminiService';
 import { PolaroidFrame } from './PolaroidFrame';
 import { PokemonCard } from './pokemon-css/PokemonCard';
 import pokemonData from './pokemon-css/data.json';
+import { useUsageLimit } from '../src/hooks/useUsageLimit';
+import { useAuth } from '../src/contexts/AuthContext';
 
 interface PhotoModalProps {
   photo: PhotoData;
@@ -30,6 +32,8 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   const [selectedPokemonId, setSelectedPokemonId] = useState<string>(photo.pokemonId || pokemonData[0].id);
   const downloadRef = useRef<HTMLDivElement>(null);
   const t = TRANSLATIONS[lang];
+  const { isAuthenticated } = useAuth();
+  const { canUseService, remainingCalls, hasCustomKey, refresh } = useUsageLimit();
 
   // Sync tempCaption when photo changes or modal opens
   useEffect(() => {
@@ -53,10 +57,20 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
         promptUsed: prompt
       });
       setCustomPrompt('');
-    } catch (error) {
+      // Refresh usage info after successful API call
+      refresh();
+    } catch (error: any) {
       console.error(error);
       onUpdate(photo.id, { status: PhotoStatus.DONE });
-      alert(t.error);
+
+      // Handle specific error types
+      if (error.message === 'auth_required') {
+        alert(t.loginToUse);
+      } else if (error.message === 'quota_exceeded') {
+        alert(t.quotaExceeded);
+      } else {
+        alert(t.error);
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -254,9 +268,35 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 
             {/* Magic Edit Section */}
             <div className="mb-8">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                {t.magic} <span className="inline-block px-1.5 py-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-[10px] rounded-full">GEMINI</span>
-              </h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                  {t.magic} <span className="inline-block px-1.5 py-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-[10px] rounded-full">GEMINI</span>
+                </h3>
+                {/* Usage Info Display */}
+                {isAuthenticated && (
+                  <div className="text-xs">
+                    {hasCustomKey ? (
+                      <span className="text-green-600 font-medium">✨ {t.unlimitedUse}</span>
+                    ) : (
+                      <span className="text-gray-600">
+                        {t.remainingToday}: {remainingCalls}/3
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Login/Quota Messages */}
+              {!isAuthenticated && (
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                  🔑 {t.loginToUse}
+                </div>
+              )}
+              {isAuthenticated && !canUseService && (
+                <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-700">
+                  💡 {t.addApiKeyTip}
+                </div>
+              )}
 
               {/* Scrollable Preview Grid */}
               <div className="max-h-[320px] overflow-y-auto mb-4 pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
@@ -264,9 +304,9 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
                   {EDIT_OPTIONS.map((opt) => (
                     <button
                       key={opt.key}
-                      disabled={isProcessing}
+                      disabled={!canUseService || isProcessing}
                       onClick={() => handleAIEdit(opt)}
-                      className="group relative overflow-hidden bg-gray-50 hover:bg-indigo-50 rounded-xl border border-gray-100 transition-all text-xs font-medium disabled:opacity-50 hover:shadow-md"
+                      className="group relative overflow-hidden bg-gray-50 hover:bg-indigo-50 rounded-xl border border-gray-100 transition-all text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md"
                     >
                       {/* Preview Image */}
                       {opt.previewImage ? (
@@ -299,16 +339,16 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
                 <input
                   type="text"
                   value={customPrompt}
-                  disabled={isProcessing}
+                  disabled={!canUseService || isProcessing}
                   onChange={(e) => setCustomPrompt(e.target.value)}
                   placeholder={t.customPromptPlaceholder}
                   onKeyDown={(e) => e.key === 'Enter' && handleAIEdit()}
-                  className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   onClick={() => handleAIEdit()}
-                  disabled={!customPrompt || isProcessing}
-                  className="absolute right-2 top-2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 transition-colors"
+                  disabled={!canUseService || !customPrompt || isProcessing}
+                  className="absolute right-2 top-2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />

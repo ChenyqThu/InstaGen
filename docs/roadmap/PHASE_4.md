@@ -1,6 +1,6 @@
 # Phase 4: 使用限制系统
 
-> 版本: v1.4.0 | 状态: 📋 待开发 | 依赖: Phase 1
+> 版本: v1.4.0 | 状态: ✅ 已完成 | 依赖: Phase 1
 
 ## 目标
 
@@ -8,11 +8,11 @@
 
 ## 核心功能
 
-- [ ] 每日 3 次免费配额
-- [ ] 使用量追踪和显示
-- [ ] 服务端配额检查
-- [ ] 自定义 Key 绕过限制
-- [ ] 配额刷新 (UTC 00:00)
+- [x] 每日 3 次免费配额
+- [x] 使用量追踪和显示
+- [x] 服务端配额检查
+- [x] 自定义 Key 绕过限制
+- [x] 配额刷新 (UTC 00:00)
 
 ## 配额规则
 
@@ -30,177 +30,44 @@
 ## 任务清单
 
 ### 任务 4.1: 数据库表创建
-**状态**: 📋 待开发
-
-**目标**: 创建 user_usage 表追踪使用量
-
-**SQL 脚本**:
-```sql
-create table user_usage (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade not null,
-  usage_date date not null,
-  gemini_calls integer default 0,
-  created_at timestamp with time zone default timezone('utc', now()) not null,
-
-  -- 每用户每天只有一条记录
-  constraint unique_user_date unique (user_id, usage_date)
-);
-
--- 索引
-create index idx_user_usage_user_date on user_usage(user_id, usage_date);
-
--- RLS
-alter table user_usage enable row level security;
-
-create policy "Users can view own usage" on user_usage
-  for select using (auth.uid() = user_id);
-create policy "Users can insert own usage" on user_usage
-  for insert with check (auth.uid() = user_id);
-create policy "Users can update own usage" on user_usage
-  for update using (auth.uid() = user_id);
-
--- 增加使用计数的函数
-create or replace function increment_usage(p_user_id uuid, p_date date)
-returns void as $$
-begin
-  insert into user_usage (user_id, usage_date, gemini_calls)
-  values (p_user_id, p_date, 1)
-  on conflict (user_id, usage_date)
-  do update set gemini_calls = user_usage.gemini_calls + 1;
-end;
-$$ language plpgsql security definer;
-```
+**状态**: ✅ 已完成（已存在）
 
 **验收标准**:
-- [ ] 表创建成功
-- [ ] 唯一约束生效
-- [ ] RLS 策略正确
-- [ ] increment_usage 函数可用
+- [x] 表创建成功
+- [x] 唯一约束生效
+- [x] RLS 策略正确
+- [x] increment_usage 函数可用
 
 ---
 
 ### 任务 4.2: usageService 服务层
-**状态**: 📋 待开发
-
-**目标**: 创建使用量服务
-
-**文件**: `src/services/usageService.ts`
-
-**方法列表**:
-```typescript
-// 类型定义
-interface UsageInfo {
-  used: number;
-  limit: number;
-  remaining: number;
-  hasCustomKey: boolean;
-}
-
-// 获取今日使用情况
-getTodayUsage(userId: string): Promise<UsageInfo>
-
-// 获取用户自定义 Key
-getCustomKey(userId: string): Promise<string | null>
-
-// 验证 API Key 有效性
-validateApiKey(apiKey: string): Promise<boolean>
-```
-
-**实现**:
-```typescript
-export const getTodayUsage = async (userId: string): Promise<UsageInfo> => {
-  const today = new Date().toISOString().split('T')[0];
-
-  // 获取今日使用量
-  const { data: usage } = await supabase
-    .from('user_usage')
-    .select('gemini_calls')
-    .eq('user_id', userId)
-    .eq('usage_date', today)
-    .single();
-
-  // 获取自定义 Key
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('custom_gemini_key')
-    .eq('id', userId)
-    .single();
-
-  const used = usage?.gemini_calls || 0;
-  const limit = 3;
-  const hasCustomKey = !!profile?.custom_gemini_key;
-
-  return {
-    used,
-    limit,
-    remaining: Math.max(0, limit - used),
-    hasCustomKey,
-  };
-};
-```
+**状态**: ✅ 已完成
 
 **验收标准**:
-- [ ] 正确获取使用量
-- [ ] 正确判断自定义 Key
-- [ ] 错误处理完善
+- [x] 正确获取使用量
+- [x] 正确判断自定义 Key
+- [x] 错误处理完善
 
 ---
 
 ### 任务 4.3: useUsageLimit Hook
-**状态**: 📋 待开发
-
-**目标**: 创建使用限制 Hook
-
-**文件**: `src/hooks/useUsageLimit.ts`
-
-**接口**:
-```typescript
-function useUsageLimit() {
-  return {
-    // 状态
-    loading: boolean;
-    usageInfo: UsageInfo | null;
-
-    // 计算属性
-    isAuthenticated: boolean;
-    canUseService: boolean;
-    remainingCalls: number;
-    hasCustomKey: boolean;
-
-    // 方法
-    refresh: () => Promise<void>;
-  };
-}
-```
-
-**计算逻辑**:
-```typescript
-// 是否可以使用服务
-const canUseService = isAuthenticated && (
-  usageInfo?.hasCustomKey ||         // 有自定义 Key
-  (usageInfo?.remaining ?? 0) > 0    // 还有剩余配额
-);
-```
-
-**使用示例**:
-```tsx
-const { canUseService, remainingCalls, hasCustomKey } = useUsageLimit();
-
-if (!canUseService) {
-  // 显示配额用尽提示
-}
-```
+**状态**: ✅ 已完成
 
 **验收标准**:
-- [ ] 状态正确计算
-- [ ] 未登录时返回合理默认值
-- [ ] refresh 方法正常工作
+- [x] 状态正确计算
+- [x] 未登录时返回合理默认值
+- [x] refresh 方法正常工作
 
 ---
 
 ### 任务 4.4: 修改 /api/generate 接口
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
+
+**验收标准**:
+- [x] 未登录返回 401
+- [x] 配额超限返回 429
+- [x] 自定义 Key 不检查配额
+- [x] 成功调用后更新计数
 
 **目标**: 在服务端添加配额检查
 
@@ -307,7 +174,13 @@ if (!useCustomKey) {
 ---
 
 ### 任务 4.5: PhotoModal 集成
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
+
+**验收标准**:
+- [x] 正确显示剩余次数
+- [x] 配额用尽时按钮禁用
+- [x] 显示友好提示
+- [x] 调用后数字更新
 
 **目标**: 在编辑弹窗中显示配额信息和限制
 
@@ -380,7 +253,12 @@ const handleAIEdit = async () => {
 ---
 
 ### 任务 4.6: geminiService 认证支持
-**状态**: 📋 待开发
+**状态**: ✅ 已完成
+
+**验收标准**:
+- [x] 请求带上 Authorization header
+- [x] 正确处理各类错误
+- [x] 错误信息友好
 
 **目标**: 修改 geminiService 支持认证
 
@@ -579,8 +457,8 @@ order by gemini_calls;
 ## 完成标准
 
 Phase 4 完成的标志：
-- [ ] 未登录用户无法使用 Magic Edit
-- [ ] 登录用户有每日 3 次限额
-- [ ] 配额用尽时显示提示
-- [ ] 自定义 Key 用户不受限制
-- [ ] 配额每日 UTC 0 点重置
+- [x] 未登录用户无法使用 Magic Edit
+- [x] 登录用户有每日 3 次限额
+- [x] 配额用尽时显示提示
+- [x] 自定义 Key 用户不受限制
+- [x] 配额每日 UTC 0 点重置

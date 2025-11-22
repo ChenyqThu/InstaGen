@@ -92,6 +92,13 @@ export const TRANSLATIONS = {
     deleteAccountConfirm: 'This will permanently delete all your data. This cannot be undone.',
     typeDelete: 'Type "DELETE" to confirm',
     permanentlyDelete: 'Permanently Delete',
+
+    // Usage Limits
+    remainingToday: 'Remaining today',
+    quotaExceeded: 'Daily limit reached. Add your API key for unlimited use!',
+    unlimitedUse: 'Unlimited use',
+    loginToUse: 'Log in to use Magic Edit',
+    addApiKeyTip: 'Add your API key for unlimited Magic Edit',
   },
   zh: {
     title: 'InstaGen',
@@ -180,6 +187,13 @@ export const TRANSLATIONS = {
     private: '私密',
     noPhotos: '暂无照片',
     loading: '加载中...',
+
+    // Usage Limits
+    remainingToday: '今日剩余',
+    quotaExceeded: '今日配额已用完，添加自己的 API Key 可无限使用！',
+    unlimitedUse: '无限制使用',
+    loginToUse: '登录后可使用 Magic Edit',
+    addApiKeyTip: '添加自己的 API Key 可无限使用 Magic Edit',
   }
 };
 

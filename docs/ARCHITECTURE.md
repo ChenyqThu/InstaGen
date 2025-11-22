@@ -77,6 +77,7 @@
 │   │   │   └── AccountSettings.tsx # 账户设置
 │   │   └── gallery/              # 画廊相关组件
 │   │       ├── MyGallery.tsx     # 个人照片库
+│   │       ├── GalleryPhotoModal.tsx # 画廊照片编辑器（高质量下载）
 │   │       └── PhotoActions.tsx  # 照片操作菜单
 │   ├── services/
 │   │   ├── supabaseClient.ts     # Supabase 客户端 (认证)
@@ -202,10 +203,110 @@ AuthContext
 | 状态类型 | 管理方式 | 说明 |
 |----------|----------|------|
 | **用户认证** | AuthContext | 全局状态，持久化 |
-| **照片列表** | App.tsx useState | 本地状态，刷新丢失 |
+| **照片列表** | App.tsx useState + localStorage | 本地状态，localStorage 持久化 |
 | **用户照片** | useMyPhotos Hook | 从 Supabase 获取 |
 | **UI 状态** | 组件内 useState | 局部状态 |
 | **语言设置** | App.tsx useState | 可考虑持久化 |
+
+### localStorage 持久化 (v1.5.1)
+
+**实现位置**: `App.tsx`
+
+**用途**: 解决 OAuth 登录重定向导致的照片丢失问题
+
+**核心逻辑**:
+```typescript
+// 初始化：从 localStorage 恢复照片
+const [photos, setPhotos] = useState<PhotoData[]>(() => {
+  const stored = localStorage.getItem('instagen-photos');
+  return stored ? JSON.parse(stored) : [];
+});
+
+// 自动保存：每次 photos 变化时保存
+useEffect(() => {
+  const photosToStore = photos.slice(-MAX_STORED_PHOTOS);
+  localStorage.setItem('instagen-photos', JSON.stringify(photosToStore));
+}, [photos]);
+```
+
+**关键参数**:
+- 存储键: `instagen-photos`
+- 存储限制: 最多保留 10 张最近照片
+- 容错处理: 超出配额时自动清理旧数据
+
+**适用场景**:
+1. 用户未登录时拍摄照片
+2. 点击保存后触发 OAuth 登录
+3. 登录重定向后照片自动恢复
+4. 用户可以继续编辑和保存照片
+
+## 高质量照片导出 (v1.5.1)
+
+**实现位置**: `src/components/gallery/GalleryPhotoModal.tsx`
+
+### 技术挑战
+
+**问题**: html2canvas 不支持 CSS `object-fit: cover`，导致照片被拉伸变形
+
+**原因**:
+- PolaroidFrame 照片显示区域: 300px × 340px (15:17 纵向比例)
+- 原始照片通常是 16:9 或其他比例
+- 浏览器用 `object-fit: cover` 自动裁剪，但 html2canvas 不支持此 CSS 属性
+
+### 解决方案
+
+**方案**: Canvas 预裁剪 + html2canvas 渲染
+
+```typescript
+// 1. 计算目标比例
+const targetRatio = 300 / 340;  // 0.882
+
+// 2. 根据原图比例选择裁剪方向
+if (sourceRatio > targetRatio) {
+  // 横向照片 → 裁剪宽度
+  cropHeight = img.height;
+  cropWidth = img.height * targetRatio;
+  sx = (img.width - cropWidth) / 2;  // 水平居中
+} else {
+  // 竖向照片 → 裁剪高度
+  cropWidth = img.width;
+  cropHeight = img.width / targetRatio;
+  sy = (img.height - cropHeight) / 2;  // 垂直居中
+}
+
+// 3. Canvas 绘制裁剪后的图片
+canvas.width = cropWidth;
+canvas.height = cropHeight;
+ctx.drawImage(img, sx, sy, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+// 4. 临时替换 DOM 中的图片
+photoImg.src = canvas.toDataURL('image/png');
+photoImg.style.objectFit = 'fill';  // 已裁剪，直接填充
+
+// 5. html2canvas 渲染
+await html2canvas(element, { scale: 4 });
+
+// 6. 恢复原始图片
+photoImg.src = originalSrc;
+photoImg.style.objectFit = originalObjectFit;
+```
+
+### 关键技术点
+
+| 技术点 | 说明 |
+|--------|------|
+| **裁剪比例** | 300:340 = 15:17 (与 PolaroidFrame 显示区域一致) |
+| **裁剪算法** | 中心裁剪 (center crop) |
+| **输出分辨率** | 4x 缩放 (1200x1360 → 4800x5440) |
+| **图片质量** | `imageSmoothingQuality: 'high'` + PNG 格式 |
+| **DOM 标记** | `data-main-photo="true"` 标识主照片 |
+| **渲染方式** | `<img>` 标签 (优于 CSS background-image) |
+
+### 性能优化
+
+- 临时修改原始 DOM（而非克隆），减少内存占用
+- 立即恢复原状态，避免视觉闪烁
+- requestAnimationFrame 确保 DOM 完全更新后再渲染
 
 ## 国际化 (i18n)
 

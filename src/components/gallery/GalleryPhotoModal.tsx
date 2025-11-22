@@ -119,19 +119,100 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
 
     setIsDownloading(true);
     try {
-      const canvas = await html2canvas(cardRef.current, {
+      const element = cardRef.current;
+
+      // Find the main photo image
+      const photoImg = element.querySelector('img[data-main-photo="true"]') as HTMLImageElement;
+      if (!photoImg) {
+        throw new Error('Photo image not found');
+      }
+
+      // Store original src and styles
+      const originalSrc = photoImg.src;
+      const originalObjectFit = photoImg.style.objectFit;
+
+      // Helper function to crop image to Polaroid frame aspect ratio (300:340 = 15:17)
+      const cropImageToFrameRatio = (imgSrc: string): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              reject(new Error('Failed to get canvas context'));
+              return;
+            }
+
+            // Target aspect ratio: 300:340 = 15:17
+            const targetRatio = 300 / 340;
+            const sourceRatio = img.width / img.height;
+
+            let cropWidth, cropHeight, sx, sy;
+
+            if (sourceRatio > targetRatio) {
+              // Image is wider - crop width
+              cropHeight = img.height;
+              cropWidth = img.height * targetRatio;
+              sx = (img.width - cropWidth) / 2;
+              sy = 0;
+            } else {
+              // Image is taller - crop height
+              cropWidth = img.width;
+              cropHeight = img.width / targetRatio;
+              sx = 0;
+              sy = (img.height - cropHeight) / 2;
+            }
+
+            canvas.width = cropWidth;
+            canvas.height = cropHeight;
+
+            // Draw cropped image
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, sx, sy, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+            resolve(canvas.toDataURL('image/png'));
+          };
+          img.onerror = () => reject(new Error('Failed to load image'));
+          img.src = imgSrc;
+        });
+      };
+
+      // Crop the photo to frame aspect ratio
+      const croppedSrc = await cropImageToFrameRatio(localPhoto.data_url);
+
+      // Temporarily update the image
+      photoImg.src = croppedSrc;
+      photoImg.style.objectFit = 'fill';
+
+      // Wait for DOM to update
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(resolve);
+      }));
+
+      // Render with html2canvas
+      const canvas = await html2canvas(element, {
         backgroundColor: null,
-        scale: 2,
+        scale: 4,
         useCORS: true,
+        allowTaint: true,
+        logging: false,
+        imageTimeout: 15000,
       });
 
+      // Restore original image immediately
+      photoImg.src = originalSrc;
+      photoImg.style.objectFit = originalObjectFit;
+
+      // Download
       const link = document.createElement('a');
       link.download = `instagen-${photo.id}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
     } catch (err) {
       console.error('Download failed:', err);
-      alert(t.downloadError);
+      alert(t.downloadError || 'Download failed');
     } finally {
       setIsDownloading(false);
     }
@@ -224,9 +305,8 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
                   <button
                     key={style}
                     onClick={() => handleLocalUpdate({ frame_style: style })}
-                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-transform hover:scale-110 ${
-                      frameStyle === style ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
-                    } ${FRAME_STYLES[style]}`}
+                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-transform hover:scale-110 ${frameStyle === style ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                      } ${FRAME_STYLES[style]}`}
                     title={style}
                   />
                 ))}
@@ -240,9 +320,8 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
                 {/* None option */}
                 <button
                   onClick={() => handleLocalUpdate({ pokemon_id: undefined })}
-                  className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${
-                    !localPhoto.pokemon_id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
-                  }`}
+                  className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${!localPhoto.pokemon_id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                    }`}
                   title={t.cardEffectNone}
                 >
                   <div className="w-full h-full relative">
@@ -262,9 +341,8 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
                   <button
                     key={card.id}
                     onClick={() => handleLocalUpdate({ pokemon_id: card.id })}
-                    className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${
-                      localPhoto.pokemon_id === card.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
-                    }`}
+                    className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${localPhoto.pokemon_id === card.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                      }`}
                     title={card.name}
                   >
                     <div className="w-full h-full relative">
@@ -396,11 +474,10 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
               <button
                 onClick={handleSaveChanges}
                 disabled={!hasChanges || isSaving}
-                className={`flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all ${
-                  hasChanges
+                className={`flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all ${hasChanges
                     ? 'bg-gradient-to-r from-[#E76F51] to-[#F4A261] text-white hover:shadow-lg'
                     : 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-                }`}
+                  }`}
               >
                 {isSaving && (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -412,11 +489,10 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
             {/* Share Button */}
             <button
               onClick={photo.is_public ? onUnshare : onShare}
-              className={`w-full flex items-center justify-center gap-2 py-3 border-2 rounded-xl transition-all font-medium text-sm ${
-                photo.is_public
+              className={`w-full flex items-center justify-center gap-2 py-3 border-2 rounded-xl transition-all font-medium text-sm ${photo.is_public
                   ? 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100'
                   : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400 hover:text-blue-500'
-              }`}
+                }`}
             >
               {photo.is_public ? <Lock className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
               {photo.is_public ? t.unshare : t.share}

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 InstaGen Polaroid is an interactive Polaroid-style camera web application that uses Google Gemini 2.5 Flash Image API for AI-powered photo editing. Users can take photos through their webcam, drag them onto a virtual board, and apply various AI transformations.
 
-**Current Version**: v1.5.0 (Phase 5 completed - Gallery Enhancement)
+**Current Version**: v1.5.1 (UX & Performance Improvements)
 
 ## Development Commands
 
@@ -54,6 +54,20 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # For server-side operations
 2. **Photo Library** (Phase 2): Personal photo storage, cloud sync, sharing
 3. **Account Management** (Phase 3): Profile settings, custom API key
 4. **Usage Limits** (Phase 4): Daily quota (3/day), usage tracking
+5. **Gallery Enhancement** (Phase 5): High-quality download, UX improvements
+
+### Recent Improvements (v1.5.1)
+
+**UX Enhancements**:
+- Save button remains enabled when not logged in - clicking opens login modal
+- Photo state persists through OAuth login flow via localStorage (max 10 photos)
+- Seamless login experience - users can continue editing after authentication
+
+**Download Quality**:
+- High-resolution export: 4x scaling (1360x1960 pixels)
+- Correct aspect ratio cropping (300:340 = 15:17 for Polaroid frame)
+- Native `<img>` rendering for better quality (vs CSS background-image)
+- Canvas-based pre-cropping before html2canvas rendering
 
 ### Application Flow
 
@@ -77,7 +91,7 @@ Camera Capture → Photo State (DEVELOPING → DONE → EDITING) → AI Edit / S
 │   ├── Camera.tsx                # Webcam capture with filter wheel
 │   ├── FilterWheel.tsx           # Rotatable filter selector
 │   ├── PhotoModal.tsx            # Edit modal with AI controls + usage display
-│   ├── PolaroidFrame.tsx         # Photo frame styles
+│   ├── PolaroidFrame.tsx         # Photo frame (uses <img> for better quality)
 │   ├── PolaroidPhoto.tsx         # Draggable photo component
 │   ├── PublicGallery.tsx         # Public gallery view
 │   └── pokemon-css/              # Pokemon card holographic effects
@@ -92,6 +106,7 @@ Camera Capture → Photo State (DEVELOPING → DONE → EDITING) → AI Edit / S
 │   │   │   └── AccountSettings.tsx # Profile + API key settings
 │   │   └── gallery/
 │   │       ├── MyGallery.tsx     # Personal photo library
+│   │       ├── GalleryPhotoModal.tsx # Gallery photo editor with download
 │   │       └── PhotoActions.tsx  # Photo action menu
 │   ├── services/
 │   │   ├── supabaseClient.ts     # Supabase client (auth)
@@ -120,13 +135,22 @@ Camera Capture → Photo State (DEVELOPING → DONE → EDITING) → AI Edit / S
 │       ├── camera.webp           # Camera image
 │       └── previews/             # Edit option previews
 │
-├── App.tsx                       # Main app component
+├── App.tsx                       # Main app component (with localStorage)
 ├── index.tsx                     # React entry point
 ├── index.html                    # HTML template
 ├── types.ts                      # Global type definitions
 ├── constants.ts                  # Translations + frame styles
 └── vite.config.ts                # Vite configuration
 ```
+
+### Photo State Persistence
+
+**localStorage Integration** (App.tsx):
+- Automatic save: Photos state syncs to localStorage on every change
+- Automatic restore: Photos recovered on app load (after OAuth redirect)
+- Storage limit: Max 10 most recent photos to prevent overflow
+- Storage key: `instagen-photos`
+- Use case: Prevents photo loss during OAuth login flow
 
 ### Database Tables (Supabase)
 
@@ -171,12 +195,25 @@ Camera Capture → Photo State (DEVELOPING → DONE → EDITING) → AI Edit / S
 - All strings in `TRANSLATIONS` constant
 - Toggle in top-right header
 
+**High-Quality Photo Export** (GalleryPhotoModal.tsx):
+- Aspect ratio: 300:340 (15:17) - matches Polaroid frame visible area
+- Cropping logic: Center crop to maintain subject
+- Resolution: 4x scaling (1200x1360 photo area → 4800x5440 output)
+- Image rendering: `<img>` tag with `data-main-photo` attribute
+- Pre-processing: Canvas crops image before html2canvas
+- Quality settings: `imageSmoothingQuality: 'high'`, PNG format
+
 ## Important Implementation Notes
 
 **Photo Status Flow**:
 ```
 DEVELOPING (5s animation) → DONE (ready) → EDITING (API call) → DONE
 ```
+
+**Save Button Behavior**:
+- **Not logged in**: Button enabled with blue border, click to open login modal
+- **Logged in**: Normal save behavior, disabled after successful save
+- **Login flow**: Photo modal closes → Login modal opens → After login, photos persist in localStorage
 
 **Protected Actions** (require login):
 - Magic Edit (AI transformation)

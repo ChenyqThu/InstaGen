@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Camera } from './components/Camera';
 import { PolaroidPhoto } from './components/PolaroidPhoto';
@@ -9,13 +9,49 @@ import { TRANSLATIONS } from './constants';
 import { UserMenu } from '@/src/components/auth/UserMenu';
 import { LoginModal } from '@/src/components/auth/LoginModal';
 
+const STORAGE_KEY = 'instagen-photos';
+const MAX_STORED_PHOTOS = 10; // Limit to prevent localStorage overflow
+
 const App: React.FC = () => {
-  const [photos, setPhotos] = useState<PhotoData[]>([]);
+  // Initialize photos from localStorage
+  const [photos, setPhotos] = useState<PhotoData[]>(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        console.log('Restored photos from localStorage:', parsed.length);
+        return parsed;
+      }
+    } catch (error) {
+      console.error('Failed to restore photos from localStorage:', error);
+    }
+    return [];
+  });
+
   const [lang, setLang] = useState<Language>('en');
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [flashActive, setFlashActive] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // Persist photos to localStorage whenever they change
+  useEffect(() => {
+    try {
+      // Only store the most recent photos to avoid localStorage size limits
+      const photosToStore = photos.slice(-MAX_STORED_PHOTOS);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(photosToStore));
+    } catch (error) {
+      console.error('Failed to save photos to localStorage:', error);
+      // If storage is full, try clearing old data
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        const photosToStore = photos.slice(-MAX_STORED_PHOTOS);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(photosToStore));
+      } catch (retryError) {
+        console.error('Still failed after clearing. Storage might be full:', retryError);
+      }
+    }
+  }, [photos]);
 
   const bringToFront = (id: string) => {
     setPhotos(prev => {

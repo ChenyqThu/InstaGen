@@ -94,14 +94,18 @@ export const PolaroidFrame = React.forwardRef<HTMLDivElement, PolaroidFrameProps
           borderWidth: `${2 * scale}px`
         }}
       >
-        <div
+        <img
+          src={dataUrl}
+          alt={caption || t.defaultCaption}
           className="w-full h-full"
+          data-main-photo="true"
           style={{
-            backgroundImage: `url(${dataUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
+            display: 'block',
+            objectFit: 'cover',
+            objectPosition: 'center',
+            imageRendering: 'high-quality',
           }}
+          crossOrigin="anonymous"
         />
         {isProcessing && (
           <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex items-center justify-center">

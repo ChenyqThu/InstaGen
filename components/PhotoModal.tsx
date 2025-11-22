@@ -86,8 +86,10 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   };
 
   const handleSave = async () => {
+    // If not authenticated, close modal and open login
     if (!isAuthenticated) {
-      onLoginRequest();
+      onClose(); // Close the photo modal
+      onLoginRequest(); // Open login modal
       return;
     }
 
@@ -349,7 +351,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
                   className="absolute right-2 top-2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
                   </svg>
                 </button>
               </div>
@@ -361,11 +363,13 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
             <button
               onClick={handleSave}
               disabled={isSaved || isSaving}
-              className={`flex items-center justify-center w-full py-3 rounded-xl font-medium text-sm shadow-sm transition-colors ${
-                isSaved
+              title={!isAuthenticated ? (lang === 'zh' ? '点击登录以保存' : 'Click to login and save') : ''}
+              className={`flex items-center justify-center w-full py-3 rounded-xl font-medium text-sm shadow-sm transition-colors ${isSaved
                   ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
-              }`}
+                  : !isAuthenticated
+                    ? 'bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:shadow-md'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+                }`}
             >
               {isSaving ? (
                 <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />

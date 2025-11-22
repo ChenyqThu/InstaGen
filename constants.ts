@@ -45,9 +45,8 @@ export const TRANSLATIONS = {
     submit: 'Submit',
     cancel: 'Cancel',
     logout: 'Logout',
-    myAccount: 'My Account',
     myPhotos: 'My Photos',
-    settings: 'Settings',
+    settings: 'My Account',
     terms: 'Terms of Service',
     privacy: 'Privacy Policy',
     agreeTo: 'By logging in, you agree to our',
@@ -58,6 +57,7 @@ export const TRANSLATIONS = {
     authError: 'Authentication failed',
     savePhoto: 'Save Photo',
     saved: 'Saved!',
+    alreadySaved: 'Saved',
     share: 'Share',
     unshare: 'Unshare',
     shared: 'Shared!',
@@ -99,6 +99,14 @@ export const TRANSLATIONS = {
     unlimitedUse: 'Unlimited use',
     loginToUse: 'Log in to use Magic Edit',
     addApiKeyTip: 'Add your API key for unlimited Magic Edit',
+
+    // Gallery Enhancement (Phase 5)
+    editPhoto: 'Edit Photo',
+    downloadCard: 'Download Card',
+    downloadingCard: 'Generating image...',
+    updateSuccess: 'Photo updated!',
+    updateError: 'Failed to update photo',
+    unsavedChanges: 'You have unsaved changes. Are you sure you want to close?',
   },
   zh: {
     title: 'InstaGen',
@@ -164,9 +172,8 @@ export const TRANSLATIONS = {
     submit: '提交',
     cancel: '取消',
     logout: '退出登录',
-    myAccount: '我的账户',
     myPhotos: '我的照片库',
-    settings: '设置',
+    settings: '我的账号',
     terms: '服务条款',
     privacy: '隐私政策',
     agreeTo: '登录即代表你同意我们的',
@@ -177,6 +184,7 @@ export const TRANSLATIONS = {
     authError: '认证失败',
     savePhoto: '保存照片',
     saved: '已保存！',
+    alreadySaved: '已保存',
     share: '分享',
     unshare: '取消分享',
     shared: '已分享！',
@@ -194,6 +202,14 @@ export const TRANSLATIONS = {
     unlimitedUse: '无限制使用',
     loginToUse: '登录后可使用 Magic Edit',
     addApiKeyTip: '添加自己的 API Key 可无限使用 Magic Edit',
+
+    // Gallery Enhancement (Phase 5)
+    editPhoto: '编辑照片',
+    downloadCard: '下载卡片',
+    downloadingCard: '正在生成图片...',
+    updateSuccess: '照片已更新！',
+    updateError: '更新照片失败',
+    unsavedChanges: '有未保存的更改，确定要关闭吗？',
   }
 };
 

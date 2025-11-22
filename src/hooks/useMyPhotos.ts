@@ -102,6 +102,30 @@ export function useMyPhotos() {
         }
     };
 
+    const updatePhoto = async (
+        photoId: string,
+        updates: {
+            data_url?: string;
+            caption?: string;
+            frame_style?: string;
+            pokemon_id?: string | null;
+            prompt_used?: string;
+        }
+    ): Promise<SavedPhoto | undefined> => {
+        if (!user) return;
+
+        try {
+            const updated = await photoService.updatePhoto(photoId, user.id, updates);
+            setPhotos(prev => prev.map(p =>
+                p.id === photoId ? updated : p
+            ));
+            return updated;
+        } catch (err) {
+            console.error('Error updating photo:', err);
+            throw err;
+        }
+    };
+
     return {
         photos,
         loading,
@@ -111,6 +135,7 @@ export function useMyPhotos() {
         shareToPublic,
         unshareFromPublic,
         updateCaption,
+        updatePhoto,
         refresh: fetchPhotos,
     };
 }

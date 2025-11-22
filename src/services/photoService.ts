@@ -146,5 +146,39 @@ export const photoService = {
             .eq('user_id', userId);
 
         if (error) throw error;
+    },
+
+    /**
+     * Update photo (after AI edit or style changes)
+     */
+    async updatePhoto(
+        photoId: string,
+        userId: string,
+        updates: {
+            data_url?: string;
+            caption?: string;
+            frame_style?: string;
+            pokemon_id?: string | null;
+            prompt_used?: string;
+        }
+    ): Promise<SavedPhoto> {
+        // Build update object, only include defined fields
+        const updateData: Record<string, unknown> = {};
+        if (updates.data_url !== undefined) updateData.data_url = updates.data_url;
+        if (updates.caption !== undefined) updateData.caption = updates.caption;
+        if (updates.frame_style !== undefined) updateData.frame_style = updates.frame_style;
+        if (updates.pokemon_id !== undefined) updateData.pokemon_id = updates.pokemon_id;
+        if (updates.prompt_used !== undefined) updateData.prompt_used = updates.prompt_used;
+
+        const { data, error } = await supabase
+            .from('user_photos')
+            .update(updateData)
+            .eq('id', photoId)
+            .eq('user_id', userId)
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
     }
 };

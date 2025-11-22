@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 InstaGen Polaroid is an interactive Polaroid-style camera web application that uses Google Gemini 2.5 Flash Image API for AI-powered photo editing. Users can take photos through their webcam, drag them onto a virtual board, and apply various AI transformations.
 
+**Current Version**: v1.5.0 (Phase 5 completed - Gallery Enhancement)
+
 ## Development Commands
 
 ```bash
@@ -29,115 +31,173 @@ Create a `.env` file in the root directory with:
 GEMINI_API_KEY=your_api_key_here
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # For server-side operations
 ```
-
-The Gemini API key is accessed via `process.env.API_KEY` or `process.env.GEMINI_API_KEY` (both mapped in vite.config.ts:14-15).
-Supabase credentials are used for the public gallery feature (services/supabaseClient.ts).
 
 ## Architecture
 
-### Core Application Flow
+### Tech Stack
 
-1. **Camera Capture** (Camera.tsx): Accesses user's webcam, captures square photos, applies mirror flip for selfie mode
-2. **Photo State Management** (App.tsx): Central state for all photos with UUID-based tracking, manages lifecycle from DEVELOPING → DONE → EDITING
-3. **Photo Display** (PolaroidPhoto.tsx): Draggable Polaroid frames with 5-second developing animation
-4. **AI Editing** (PhotoModal.tsx + geminiService.ts): Modal interface for frame styles and Gemini-powered transformations
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| Frontend | React 18 + TypeScript | SPA application |
+| Build Tool | Vite | Fast dev & build |
+| Styling | Tailwind CSS (CDN) | Atomic CSS |
+| Backend | Vercel Serverless | API routes |
+| Database | Supabase (PostgreSQL) | Data + Auth |
+| AI Service | Google Gemini 2.5 Flash | Image editing |
+| Deployment | Vercel | Auto deploy |
 
-### State Management Pattern
+### Core Modules
 
-Photos flow through three states defined in types.ts:
-- `PhotoStatus.DEVELOPING`: Initial 5-second blur/grayscale animation
-- `PhotoStatus.DONE`: Ready for interaction
-- `PhotoStatus.EDITING`: Processing with Gemini API
+1. **Authentication** (Phase 1): OAuth login (Google/GitHub), session management
+2. **Photo Library** (Phase 2): Personal photo storage, cloud sync, sharing
+3. **Account Management** (Phase 3): Profile settings, custom API key
+4. **Usage Limits** (Phase 4): Daily quota (3/day), usage tracking
 
-All photo data is managed through the `PhotoData` interface with position (x, y), rotation, and frame style.
+### Application Flow
 
-### Key Technical Details
-
-**Camera Integration**:
-- Camera asset served from public/assets/camera.webp
-- Lens positioned absolutely at center (top-1/2 left-1/2) with video feed
-- Shutter button hotspot at bottom-[22%] left-[11%]
-- Outputs square images with centered crop
-- Fallback UI shown if image fails to load
-
-**Instagram Filters** (components/FilterWheel.tsx + config/filterConfig.ts):
-- Rotatable gear wheel around camera lens for filter selection
-- 24 Instagram-style filters (Normal, 1977, Aden, Amaro, etc.)
-- Filters applied via CSS classes from public/instagram.css
-- Canvas context.filter used for photo capture
-- Bilingual filter names (English/Chinese) in filterConfig.ts
-- Filter ID saved with photo for gallery display
-
-**Gemini API Integration** (services/geminiService.ts):
-- Model: `gemini-2.5-flash-image`
-- Sends base64 image + text prompt
-- Returns transformed image via `responseModalities: [Modality.IMAGE]`
-- Predefined prompts in constants.ts (cartoon, sketch, anime, retro, cyberpunk, watercolor)
-
-**Path Alias**:
-- `@/*` maps to project root (tsconfig.json:21-24, vite.config.ts:18-20)
-- Import example: `import { Camera } from '@/components/Camera'`
-
-**Styling**:
-- Tailwind CSS loaded via CDN (index.html:7)
-- Custom animations: `animate-eject` (photo ejection), `animate-develop` (revealing effect)
-- Frame styles in FRAME_STYLES constant (classic/black/colorful/vintage)
+```
+Camera Capture → Photo State (DEVELOPING → DONE → EDITING) → AI Edit / Save / Share
+                                    ↓
+                              Login Required (for AI Edit & Save)
+                                    ↓
+                              Quota Check (3/day or Custom Key)
+```
 
 ### File Structure
 
 ```
 /
-├── App.tsx                    # Main app component, photo state
-├── index.tsx                  # React root
-├── index.html                 # Entry point with Tailwind + importmap
-├── types.ts                   # TypeScript interfaces/enums
-├── constants.ts               # Edit options, translations, frame styles
-├── vite.config.ts             # Vite config with env var injection
-├── components/
-│   ├── Camera.tsx            # Webcam capture with filter wheel
-│   ├── FilterWheel.tsx       # Rotatable filter selector gear
-│   ├── PolaroidPhoto.tsx     # Draggable photo component
-│   ├── PolaroidFrame.tsx     # Photo frame with styles
-│   ├── PhotoModal.tsx        # Edit modal with AI controls
-│   ├── PublicGallery.tsx     # Public gallery view
-│   └── pokemon-css/          # Pokemon card holographic effects
-├── config/
-│   ├── filterConfig.ts       # Instagram filter definitions
-│   └── magicEditConfig.ts    # AI edit options
-├── services/
-│   ├── geminiService.ts      # Gemini API client
-│   └── supabaseClient.ts     # Supabase client for gallery
-└── public/
-    ├── instagram.css         # Instagram filter CSS
-    └── assets/
-        └── camera.webp       # Camera image asset (required)
+├── api/                          # Vercel Serverless Functions
+│   ├── generate.js               # Gemini API proxy + quota check
+│   └── validate-key.js           # API key validation
+│
+├── components/                   # React components (root level)
+│   ├── Camera.tsx                # Webcam capture with filter wheel
+│   ├── FilterWheel.tsx           # Rotatable filter selector
+│   ├── PhotoModal.tsx            # Edit modal with AI controls + usage display
+│   ├── PolaroidFrame.tsx         # Photo frame styles
+│   ├── PolaroidPhoto.tsx         # Draggable photo component
+│   ├── PublicGallery.tsx         # Public gallery view
+│   └── pokemon-css/              # Pokemon card holographic effects
+│
+├── src/                          # Source modules (Phase 1-4)
+│   ├── contexts/
+│   │   └── AuthContext.tsx       # Authentication state management
+│   ├── components/
+│   │   ├── auth/
+│   │   │   ├── LoginModal.tsx    # OAuth + Email login modal
+│   │   │   ├── UserMenu.tsx      # User dropdown menu
+│   │   │   └── AccountSettings.tsx # Profile + API key settings
+│   │   └── gallery/
+│   │       ├── MyGallery.tsx     # Personal photo library
+│   │       └── PhotoActions.tsx  # Photo action menu
+│   ├── services/
+│   │   ├── supabaseClient.ts     # Supabase client (auth)
+│   │   ├── authService.ts        # Auth operations
+│   │   ├── photoService.ts       # Photo CRUD operations
+│   │   └── usageService.ts       # Usage quota service
+│   ├── hooks/
+│   │   ├── useMyPhotos.ts        # Personal photos hook
+│   │   └── useUsageLimit.ts      # Usage limit hook
+│   ├── config/
+│   │   └── usageConfig.ts        # Quota configuration (3/day)
+│   └── types/
+│       └── auth.ts               # Auth type definitions
+│
+├── services/                     # Services (root level)
+│   ├── geminiService.ts          # Gemini API client with auth
+│   └── supabaseClient.ts         # Supabase client (gallery)
+│
+├── config/                       # Configuration
+│   ├── filterConfig.ts           # Instagram filter definitions
+│   └── magicEditConfig.ts        # AI edit options with previews
+│
+├── public/                       # Static assets
+│   ├── instagram.css             # Instagram filter CSS
+│   └── assets/
+│       ├── camera.webp           # Camera image
+│       └── previews/             # Edit option previews
+│
+├── App.tsx                       # Main app component
+├── index.tsx                     # React entry point
+├── index.html                    # HTML template
+├── types.ts                      # Global type definitions
+├── constants.ts                  # Translations + frame styles
+└── vite.config.ts                # Vite configuration
 ```
+
+### Database Tables (Supabase)
+
+| Table | Purpose | Phase |
+|-------|---------|-------|
+| `user_profiles` | User profile + custom API key | 1, 3 |
+| `user_photos` | Personal photo storage | 2 |
+| `public_photos` | Public gallery | 2 |
+| `user_usage` | Daily usage tracking | 4 |
+
+### Key Technical Details
+
+**Authentication Flow**:
+- OAuth providers: Google, GitHub
+- Session managed via Supabase Auth
+- AuthContext provides: `user`, `isAuthenticated`, `signIn`, `signOut`
+- Protected features require login (Magic Edit, Save Photo)
+
+**Usage Limit System**:
+- Daily quota: 3 free calls per day (UTC reset)
+- Custom API key: Unlimited usage
+- Server-side enforcement in `/api/generate.js`
+- Frontend display in PhotoModal (remaining: X/3)
+
+**Gemini API Integration** (services/geminiService.ts):
+- Model: `gemini-2.5-flash-image`
+- Sends: base64 image + text prompt + Bearer token
+- Returns: transformed image
+- Error codes: `auth_required` (401), `quota_exceeded` (429)
+
+**Instagram Filters** (components/FilterWheel.tsx):
+- 24 Instagram-style filters
+- Rotatable gear wheel UI
+- CSS filters applied via canvas context
+
+**Path Alias**:
+- `@/*` maps to project root
+- Example: `import { Camera } from '@/components/Camera'`
+
+**i18n**:
+- Languages: English ('en'), Chinese ('zh')
+- All strings in `TRANSLATIONS` constant
+- Toggle in top-right header
 
 ## Important Implementation Notes
 
-**Gemini API Error Handling**:
-- Photo status reverts to DONE on API failure (PhotoModal.tsx:46)
-- User sees browser alert with translated error message
-- No retry logic implemented
+**Photo Status Flow**:
+```
+DEVELOPING (5s animation) → DONE (ready) → EDITING (API call) → DONE
+```
 
-**Drag-and-Drop**:
-- Uses Pointer Events API (not mouse events) for better mobile support
-- Prevents dragging when clicking edit button (line 38 check)
-- Brings photo to front on select via array reordering
+**Protected Actions** (require login):
+- Magic Edit (AI transformation)
+- Save to personal library
+- Pin to public gallery
 
-**i18n**:
-- Two languages: English ('en') and Chinese ('zh')
-- All UI strings in TRANSLATIONS constant
-- Language toggle in top-right header
+**Error Handling**:
+- `auth_required`: Show login modal
+- `quota_exceeded`: Show upgrade tip (add custom API key)
+- API errors: Revert to DONE status + alert
 
-**Photo Persistence**:
-- Photos stored in React state only (no localStorage/backend)
-- Refreshing page clears all photos
-- Download creates timestamped PNG files
+**User Menu Items**:
+- My Photos → Opens personal gallery
+- Settings → Opens account settings (profile + API key)
+- Logout → Sign out
 
-**Public Gallery** (components/PublicGallery.tsx + services/supabaseClient.ts):
-- Photos can be pinned to public gallery via Supabase
-- Stores: data_url, caption, frame_style, timestamp, prompt_used, pokemon_id, filter_id
-- Gallery displays photos with original filter and Pokemon card effects
-- Supabase table: `public_photos`
+## Documentation
+
+- [Architecture](./docs/ARCHITECTURE.md) - System design
+- [Auth System](./docs/AUTH_SYSTEM.md) - Authentication details
+- [Photo Storage](./docs/PHOTO_STORAGE.md) - Photo management
+- [Usage Limits](./docs/USAGE_LIMIT_SYSTEM.md) - Quota system
+- [API Reference](./docs/API_REFERENCE.md) - Backend APIs
+- [Roadmap](./docs/roadmap/) - Development phases (all completed)

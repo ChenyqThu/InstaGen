@@ -68,6 +68,30 @@ export const TRANSLATIONS = {
     private: 'Private',
     noPhotos: 'No photos yet',
     loading: 'Loading...',
+    // Account Settings
+    accountSettings: 'Account Settings',
+    profile: 'Profile',
+    displayName: 'Display Name',
+    saveChanges: 'Save Changes',
+
+    // API Settings
+    apiSettings: 'API Settings',
+    currentStatus: 'Current Status',
+    usingSystemKey: 'Using system key (3 times/day)',
+    usingCustomKey: 'Using custom key (Unlimited)',
+    geminiApiKey: 'Gemini API Key',
+    validateKey: 'Validate Key',
+    keyValid: 'Key is valid',
+    keyInvalid: 'Key is invalid',
+    getApiKey: 'Get your API key',
+    removeKey: 'Remove Key',
+
+    // Danger Zone
+    dangerZone: 'Danger Zone',
+    deleteAccount: 'Delete Account',
+    deleteAccountConfirm: 'This will permanently delete all your data. This cannot be undone.',
+    typeDelete: 'Type "DELETE" to confirm',
+    permanentlyDelete: 'Permanently Delete',
   },
   zh: {
     title: 'InstaGen',
@@ -102,7 +126,31 @@ export const TRANSLATIONS = {
     googleLogin: '使用 Google 登录',
     githubLogin: '使用 GitHub 登录',
     emailLogin: '使用邮箱登录',
+    // Account Settings
+    accountSettings: '账户设置',
+    profile: '个人资料',
+    displayName: '显示名称',
     email: '邮箱',
+    saveChanges: '保存修改',
+
+    // API Settings
+    apiSettings: 'API 设置',
+    currentStatus: '当前状态',
+    usingSystemKey: '使用系统 Key (每日 3 次)',
+    usingCustomKey: '使用自定义 Key (无限制)',
+    geminiApiKey: 'Gemini API Key',
+    validateKey: '验证 Key',
+    keyValid: 'Key 有效',
+    keyInvalid: 'Key 无效',
+    getApiKey: '获取 API Key',
+    removeKey: '删除 Key',
+
+    // Danger Zone
+    dangerZone: '危险操作',
+    deleteAccount: '删除账户',
+    deleteAccountConfirm: '此操作将永久删除所有数据，无法恢复。',
+    typeDelete: '输入 "DELETE" 确认',
+    permanentlyDelete: '永久删除',
     password: '密码',
     name: '昵称',
     register: '注册',

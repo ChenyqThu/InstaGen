@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { LogOut, User as UserIcon, Settings, Image as ImageIcon, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { MyGallery } from '../gallery/MyGallery';
+import { AccountSettings } from './AccountSettings';
 import { TRANSLATIONS } from '@/constants';
 import { Language } from '@/types';
 
@@ -14,6 +15,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({ lang = 'en', onLoginClick })
     const { user, signOut, isAuthenticated } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [showGallery, setShowGallery] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const t = TRANSLATIONS[lang];
 
@@ -95,7 +97,13 @@ export const UserMenu: React.FC<UserMenuProps> = ({ lang = 'en', onLoginClick })
                             <ImageIcon className="w-4 h-4 text-[#E76F51]" />
                             {t.myPhotos}
                         </button>
-                        <button className="w-full px-3 py-2 text-left text-[#374151] hover:bg-[#FDF8F5] rounded-lg transition-colors flex items-center gap-3">
+                        <button
+                            onClick={() => {
+                                setShowSettings(true);
+                                setIsMenuOpen(false);
+                            }}
+                            className="w-full px-3 py-2 text-left text-[#374151] hover:bg-[#FDF8F5] rounded-lg transition-colors flex items-center gap-3"
+                        >
                             <Settings className="w-4 h-4 text-[#9CA3AF]" />
                             {t.settings}
                         </button>
@@ -116,6 +124,12 @@ export const UserMenu: React.FC<UserMenuProps> = ({ lang = 'en', onLoginClick })
             <MyGallery
                 isOpen={showGallery}
                 onClose={() => setShowGallery(false)}
+                lang={lang}
+            />
+
+            <AccountSettings
+                isOpen={showSettings}
+                onClose={() => setShowSettings(false)}
                 lang={lang}
             />
         </div>

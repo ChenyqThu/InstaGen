@@ -94,4 +94,16 @@ export const authService = {
 
         return () => subscription.unsubscribe();
     },
+
+    async deleteAccount(userId: string) {
+        // Note: This only deletes the user profile data. 
+        // To fully delete the auth user, we would need a server-side admin function.
+        const { error } = await supabase
+            .from('user_profiles')
+            .delete()
+            .eq('id', userId);
+
+        if (error) throw error;
+        await this.signOut();
+    },
 };

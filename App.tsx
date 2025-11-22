@@ -137,7 +137,6 @@ const App: React.FC = () => {
             onUpdate={updatePhoto}
             onSelect={bringToFront}
             onEditStart={setEditingPhotoId}
-            onLoginRequest={() => setIsLoginModalOpen(true)}
           />
         ))}
       </div>
@@ -150,6 +149,7 @@ const App: React.FC = () => {
           onClose={() => setEditingPhotoId(null)}
           onUpdate={updatePhoto}
           onDelete={deletePhoto}
+          onLoginRequest={() => setIsLoginModalOpen(true)}
           lang={lang}
         />
       )}

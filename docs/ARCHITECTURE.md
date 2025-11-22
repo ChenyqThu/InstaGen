@@ -52,60 +52,66 @@
 ```
 /
 ├── api/                          # Vercel Serverless Functions
-│   └── generate.js               # Gemini API 代理
+│   ├── generate.js               # Gemini API 代理 + 配额检查
+│   └── validate-key.js           # API Key 验证
 │
-├── components/                   # React 组件
-│   ├── auth/                     # 认证相关组件
-│   │   ├── LoginModal.tsx        # 登录弹窗
-│   │   ├── UserMenu.tsx          # 用户菜单
-│   │   └── AccountSettings.tsx   # 账户设置
-│   ├── gallery/                  # 画廊相关组件
-│   │   ├── MyGallery.tsx         # 个人卡片库
-│   │   └── PhotoActions.tsx      # 照片操作菜单
-│   ├── common/                   # 通用组件
-│   │   ├── Button.tsx            # 按钮组件
-│   │   └── Modal.tsx             # Modal 组件
+├── components/                   # React 组件 (根目录)
 │   ├── pokemon-css/              # Pokemon 卡片特效
+│   │   ├── PokemonCard.tsx       # 卡片组件
+│   │   ├── PokemonEffectPreview.tsx
+│   │   └── data.json             # 卡片数据
 │   ├── Camera.tsx                # 相机组件
 │   ├── FilterWheel.tsx           # 滤镜轮组件
-│   ├── PhotoModal.tsx            # 照片编辑弹窗
+│   ├── PhotoModal.tsx            # 照片编辑弹窗 + 配额显示
 │   ├── PolaroidFrame.tsx         # 相框组件
 │   ├── PolaroidPhoto.tsx         # 可拖拽照片
 │   └── PublicGallery.tsx         # 公共画廊
+│
+├── src/                          # 源码模块 (Phase 1-4)
+│   ├── contexts/
+│   │   └── AuthContext.tsx       # 认证状态管理
+│   ├── components/
+│   │   ├── auth/                 # 认证相关组件
+│   │   │   ├── LoginModal.tsx    # 登录弹窗
+│   │   │   ├── UserMenu.tsx      # 用户菜单
+│   │   │   └── AccountSettings.tsx # 账户设置
+│   │   └── gallery/              # 画廊相关组件
+│   │       ├── MyGallery.tsx     # 个人照片库
+│   │       └── PhotoActions.tsx  # 照片操作菜单
+│   ├── services/
+│   │   ├── supabaseClient.ts     # Supabase 客户端 (认证)
+│   │   ├── authService.ts        # 认证服务
+│   │   ├── photoService.ts       # 照片存储服务
+│   │   └── usageService.ts       # 使用量服务
+│   ├── hooks/
+│   │   ├── useMyPhotos.ts        # 个人照片 Hook
+│   │   └── useUsageLimit.ts      # 使用限制 Hook
+│   ├── config/
+│   │   └── usageConfig.ts        # 配额配置 (3次/天)
+│   └── types/
+│       └── auth.ts               # 认证类型
+│
+├── services/                     # 服务层 (根目录)
+│   ├── geminiService.ts          # Gemini API 服务 (带认证)
+│   └── supabaseClient.ts         # Supabase 客户端 (画廊)
 │
 ├── config/                       # 配置文件
 │   ├── filterConfig.ts           # 滤镜配置
 │   └── magicEditConfig.ts        # AI 编辑配置
 │
-├── contexts/                     # React Context
-│   └── AuthContext.tsx           # 认证状态管理
-│
-├── hooks/                        # 自定义 Hooks
-│   ├── useAuth.ts                # 认证 Hook
-│   ├── useMyPhotos.ts            # 个人照片 Hook
-│   └── useUsageLimit.ts          # 使用限制 Hook
-│
-├── services/                     # 服务层
-│   ├── authService.ts            # 认证服务
-│   ├── geminiService.ts          # Gemini API 服务
-│   ├── photoService.ts           # 照片存储服务
-│   ├── supabaseClient.ts         # Supabase 客户端
-│   └── usageService.ts           # 使用量服务
-│
-├── types/                        # 类型定义
-│   └── auth.ts                   # 认证类型
-│
 ├── docs/                         # 技术文档
 │
 ├── public/                       # 静态资源
 │   ├── instagram.css             # Instagram 滤镜
-│   └── assets/                   # 图片资源
+│   └── assets/
+│       ├── camera.webp           # 相机图片
+│       └── previews/             # 编辑选项预览图
 │
 ├── App.tsx                       # 主应用组件
 ├── index.tsx                     # 入口文件
 ├── index.html                    # HTML 模板
 ├── types.ts                      # 全局类型
-├── constants.ts                  # 常量定义
+├── constants.ts                  # 常量定义 + 翻译
 └── vite.config.ts                # Vite 配置
 ```
 

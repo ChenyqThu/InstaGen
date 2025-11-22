@@ -83,10 +83,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({ lang = 'en', onLoginClick })
                     </div>
 
                     <div className="p-2">
-                        <button className="w-full px-3 py-2 text-left text-[#374151] hover:bg-[#FDF8F5] rounded-lg transition-colors flex items-center gap-3">
-                            <UserIcon className="w-4 h-4 text-[#F4A261]" />
-                            {t.myAccount}
-                        </button>
                         <button
                             onClick={() => {
                                 setShowGallery(true);

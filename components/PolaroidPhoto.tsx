@@ -1,7 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Save, Check } from 'lucide-react';
-import { useMyPhotos } from '@/src/hooks/useMyPhotos';
-import { useAuth } from '@/src/contexts/AuthContext';
 import { Language, PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
 import { FRAME_STYLES, TRANSLATIONS } from '../constants';
 import { PokemonCard } from './pokemon-css/PokemonCard';
@@ -14,7 +11,6 @@ interface PolaroidPhotoProps {
   onUpdate: (id: string, updates: Partial<PhotoData>) => void;
   onSelect: (id: string) => void;
   onEditStart: (id: string) => void;
-  onLoginRequest: () => void;
 }
 
 export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
@@ -24,16 +20,10 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
   onUpdate,
   onSelect,
   onEditStart,
-  onLoginRequest,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [dragTilt, setDragTilt] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-
-  const { savePhoto } = useMyPhotos();
-  const { isAuthenticated } = useAuth();
 
   const dragStart = useRef({ x: 0, y: 0 });
   const dragStartMouse = useRef({ x: 0, y: 0 });
@@ -119,29 +109,6 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
   const getAnimationClass = () => {
     if (isLatest && photo.status === PhotoStatus.DEVELOPING) return 'animate-eject z-10';
     return '';
-  };
-
-  const handleSave = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    if (!isAuthenticated) {
-      onLoginRequest();
-      return;
-    }
-
-    if (isSaving || saveSuccess) return;
-
-    try {
-      setIsSaving(true);
-      await savePhoto(photo);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (error) {
-      console.error('Failed to save photo:', error);
-      // Could show toast here
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   const frameClass = FRAME_STYLES[photo.frameStyle] || FRAME_STYLES[PhotoFrameStyle.CLASSIC];
@@ -309,35 +276,16 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
         </div>
       )}
 
-      {/* Edit/Expand Button (Visible on hover only) - Outside frame */}
-      <div className={`absolute -top-3 -right-3 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'} flex flex-col gap-2`}>
-        {/* Save Button (Only when DONE) */}
-        {photo.status === PhotoStatus.DONE && (
-          <button
-            onClick={handleSave}
-            className={`w-9 h-9 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 border-2 ${saveSuccess
-                ? 'bg-green-100 text-green-600 border-green-200'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-400 hover:text-blue-500'
-              }`}
-            title={saveSuccess ? t.saved : t.savePhoto}
-          >
-            {isSaving ? (
-              <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : saveSuccess ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-          </button>
-        )}
-
+      {/* Edit Button (Visible on hover only) - Outside frame */}
+      <div className={`absolute -top-3 -right-3 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
         <button
           onClick={() => onEditStart(photo.id)}
           className="w-9 h-9 bg-gradient-to-br from-white to-[#F5F5F4] hover:from-[#F4A261] hover:to-[#E76F51] text-[#E76F51] hover:text-white rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 border-2 border-[#E76F51]/30 hover:border-[#E76F51]"
           title={t.expand}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+          {/* Pencil/Edit Icon */}
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
           </svg>
         </button>
       </div>

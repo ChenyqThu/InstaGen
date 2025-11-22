@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import html2canvas from 'html2canvas';
+import React, { useState, useEffect } from 'react';
 import { EditOption, Language, PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
 import { EDIT_OPTIONS, FRAME_STYLES, TRANSLATIONS } from '../constants';
 import { editImageWithGemini } from '../services/geminiService';
@@ -8,6 +7,7 @@ import { PokemonCard } from './pokemon-css/PokemonCard';
 import pokemonData from './pokemon-css/data.json';
 import { useUsageLimit } from '../src/hooks/useUsageLimit';
 import { useAuth } from '../src/contexts/AuthContext';
+import { useMyPhotos } from '../src/hooks/useMyPhotos';
 
 interface PhotoModalProps {
   photo: PhotoData;
@@ -15,6 +15,7 @@ interface PhotoModalProps {
   onClose: () => void;
   onUpdate: (id: string, updates: Partial<PhotoData>) => void;
   onDelete: (id: string) => void;
+  onLoginRequest: () => void;
   lang: Language;
 }
 
@@ -24,16 +25,19 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   onClose,
   onUpdate,
   onDelete,
+  onLoginRequest,
   lang,
 }) => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [tempCaption, setTempCaption] = useState(photo.caption || '');
   const [selectedPokemonId, setSelectedPokemonId] = useState<string>(photo.pokemonId || pokemonData[0].id);
-  const downloadRef = useRef<HTMLDivElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const t = TRANSLATIONS[lang];
   const { isAuthenticated } = useAuth();
   const { canUseService, remainingCalls, hasCustomKey, refresh } = useUsageLimit();
+  const { savePhoto } = useMyPhotos();
 
   // Sync tempCaption when photo changes or modal opens
   useEffect(() => {
@@ -81,29 +85,23 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
     onClose();
   };
 
-  const handleDownload = async () => {
-    if (!downloadRef.current) return;
+  const handleSave = async () => {
+    if (!isAuthenticated) {
+      onLoginRequest();
+      return;
+    }
+
+    if (isSaving || isSaved) return;
 
     try {
-      // Wait a tick to ensure any pending renders are done
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const canvas = await html2canvas(downloadRef.current, {
-        backgroundColor: null,
-        scale: 1, // We are already scaling the component by 3x
-        useCORS: true,
-        logging: false,
-        allowTaint: true,
-      });
-
-      const link = document.createElement('a');
-      const timestamp = new Date(photo.timestamp).toISOString().replace(/[:.]/g, '-').slice(0, -5);
-      link.download = `instagen-${timestamp}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      setIsSaving(true);
+      await savePhoto(photo);
+      setIsSaved(true);
     } catch (error) {
-      console.error('Download failed:', error);
-      alert(t.downloadError);
+      console.error('Failed to save photo:', error);
+      alert(t.error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -361,10 +359,22 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
           {/* Bottom Actions */}
           <div className="p-6 border-t border-gray-100 bg-gray-50/50 space-y-3">
             <button
-              onClick={handleDownload}
-              className="flex items-center justify-center w-full py-3 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium text-sm hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm"
+              onClick={handleSave}
+              disabled={isSaved || isSaving}
+              className={`flex items-center justify-center w-full py-3 rounded-xl font-medium text-sm shadow-sm transition-colors ${
+                isSaved
+                  ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+              }`}
             >
-              {t.download}
+              {isSaving ? (
+                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+              ) : isSaved ? (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              ) : null}
+              {isSaved ? t.alreadySaved : t.savePhoto}
             </button>
             <button
               onClick={async () => {
@@ -396,46 +406,6 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
           </div>
         </div>
 
-      </div>
-
-      {/* Hidden polaroid for download - High resolution (3x) */}
-      <div className="fixed -left-[9999px] top-0">
-        {photo.pokemonId ? (
-          <div style={{ width: '900px', height: '1260px' }}>
-            <PokemonCard
-              ref={downloadRef}
-              {...pokemonData.find(p => p.id === selectedPokemonId)!}
-              img={photo.dataUrl}
-              name={tempCaption || t.defaultCaption}
-              className="w-full h-full"
-              // Scale up text if needed for high-res export
-              style={{ fontSize: '3em' }}
-            >
-              <PolaroidFrame
-                dataUrl={photo.dataUrl}
-                caption={tempCaption}
-                timestamp={photo.timestamp}
-                frameStyle={photo.frameStyle}
-                scale={3}
-                editable={false}
-                promptUsed={photo.promptUsed}
-                lang={lang}
-              />
-            </PokemonCard>
-          </div>
-        ) : (
-          <PolaroidFrame
-            ref={downloadRef}
-            dataUrl={photo.dataUrl}
-            caption={tempCaption} // Use tempCaption to ensure real-time sync
-            timestamp={photo.timestamp}
-            frameStyle={photo.frameStyle}
-            scale={3} // High resolution scale
-            editable={false}
-            promptUsed={photo.promptUsed}
-            lang={lang}
-          />
-        )}
       </div>
     </div>
   );

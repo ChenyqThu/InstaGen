@@ -1,10 +1,14 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { createClient } from '@supabase/supabase-js';
+import { DAILY_FREE_LIMIT, GEMINI_MODEL, getAllowedOrigin, getTodayDateString } from './config.js';
 
 export default async function handler(req, res) {
-    // Enable CORS
+    // Enable CORS with origin validation
+    const origin = req.headers.origin;
+    const allowedOrigin = getAllowedOrigin(origin);
+
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
@@ -66,7 +70,7 @@ export default async function handler(req, res) {
             useCustomKey = true;
         } else {
             // Check quota for users using system key
-            const today = new Date().toISOString().split('T')[0];
+            const today = getTodayDateString();
             const { data: usage } = await supabase
                 .from('user_usage')
                 .select('gemini_calls')
@@ -75,13 +79,12 @@ export default async function handler(req, res) {
                 .maybeSingle();
 
             const usedCalls = usage?.gemini_calls || 0;
-            const dailyLimit = 3;
 
-            if (usedCalls >= dailyLimit) {
+            if (usedCalls >= DAILY_FREE_LIMIT) {
                 return res.status(429).json({
                     error: 'quota_exceeded',
                     message: 'Daily limit reached',
-                    limit: dailyLimit,
+                    limit: DAILY_FREE_LIMIT,
                     used: usedCalls,
                 });
             }
@@ -100,7 +103,7 @@ export default async function handler(req, res) {
         const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg);base64,/, '');
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash-image',
+            model: GEMINI_MODEL,
             contents: {
                 parts: [
                     {
@@ -125,10 +128,9 @@ export default async function handler(req, res) {
 
             // Update usage count only if using system key
             if (!useCustomKey) {
-                const today = new Date().toISOString().split('T')[0];
                 await supabase.rpc('increment_usage', {
                     p_user_id: user.id,
-                    p_date: today,
+                    p_date: getTodayDateString(),
                 });
             }
 

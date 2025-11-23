@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, User, Key, AlertTriangle, Check, Loader2, Save, Trash2, Eye, EyeOff, Settings, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
+import { useDrawerAnimation } from '@/src/hooks/useDrawerAnimation';
 import { TRANSLATIONS } from '@/constants';
 import { Language } from '@/types';
 
@@ -16,9 +17,8 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
     const { user, updateProfile } = useAuth();
     const t = TRANSLATIONS[lang];
 
-    // Animation state
-    const [isMounted, setIsMounted] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
+    // Animation state using shared hook
+    const { isMounted, isVisible } = useDrawerAnimation({ isOpen, onClose });
 
     // Profile State
     const [displayName, setDisplayName] = useState('');
@@ -39,29 +39,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
     const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
     const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
-    // Mount/unmount animation
-    useEffect(() => {
-        if (isOpen) {
-            setIsMounted(true);
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => setIsVisible(true));
-            });
-        } else {
-            setIsVisible(false);
-            const timer = setTimeout(() => setIsMounted(false), 350);
-            return () => clearTimeout(timer);
-        }
-    }, [isOpen]);
-
-    // Handle escape key
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) onClose();
-        };
-        window.addEventListener('keydown', handleEscape);
-        return () => window.removeEventListener('keydown', handleEscape);
-    }, [isOpen, onClose]);
-
+    // Initialize form data when opening
     useEffect(() => {
         if (isOpen && user) {
             setDisplayName(user.displayName || '');

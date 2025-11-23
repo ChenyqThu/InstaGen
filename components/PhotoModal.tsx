@@ -5,7 +5,7 @@ import { TRANSLATIONS } from '../constants';
 import { editImageWithGemini } from '../services/geminiService';
 import { PolaroidFrame } from './PolaroidFrame';
 import { PokemonCard } from './pokemon-css/PokemonCard';
-import pokemonData from './pokemon-css/data.json';
+import { getPokemonConfig } from '@/src/utils/pokemonUtils';
 import { useUsageLimit } from '../src/hooks/useUsageLimit';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useMyPhotos } from '../src/hooks/useMyPhotos';
@@ -137,9 +137,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   };
 
   // Get pokemon config for preview
-  const pokemonConfig = photo.pokemonId
-    ? pokemonData.find(p => p.id === photo.pokemonId) || pokemonData[0]
-    : null;
+  const pokemonConfig = getPokemonConfig(photo.pokemonId);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8">

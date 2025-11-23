@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Language, PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
 import { FRAME_STYLES, TRANSLATIONS } from '../constants';
 import { PokemonCard } from './pokemon-css/PokemonCard';
-import pokemonData from './pokemon-css/data.json';
+import { getPokemonConfigWithDefault } from '@/src/utils/pokemonUtils';
 
 interface PolaroidPhotoProps {
   photo: PhotoData;
@@ -113,7 +113,7 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
 
   const frameClass = FRAME_STYLES[photo.frameStyle] || FRAME_STYLES[PhotoFrameStyle.CLASSIC];
 
-  const selectedPokemon = pokemonData.find(p => p.id === photo.pokemonId) || pokemonData[0];
+  const selectedPokemon = getPokemonConfigWithDefault(photo.pokemonId || '');
 
   return (
     <div

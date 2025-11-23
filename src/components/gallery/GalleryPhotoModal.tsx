@@ -4,7 +4,7 @@ import { X, Download, Lock, Trash2, Globe } from 'lucide-react';
 import { SavedPhoto } from '@/src/services/photoService';
 import { PolaroidFrame } from '@/components/PolaroidFrame';
 import { PokemonCard } from '@/components/pokemon-css/PokemonCard';
-import pokemonData from '@/components/pokemon-css/data.json';
+import { getPokemonConfig } from '@/src/utils/pokemonUtils';
 import { PhotoFrameStyle, Language } from '@/types';
 import { TRANSLATIONS } from '@/constants';
 import { editImageWithGemini } from '@/services/geminiService';
@@ -61,9 +61,7 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
   if (!isOpen) return null;
 
   // Find pokemon config
-  const pokemonConfig = localPhoto.pokemon_id
-    ? pokemonData.find(p => p.id === localPhoto.pokemon_id) || pokemonData[0]
-    : null;
+  const pokemonConfig = getPokemonConfig(localPhoto.pokemon_id);
 
   const frameStyle = (localPhoto.frame_style as PhotoFrameStyle) || PhotoFrameStyle.CLASSIC;
 

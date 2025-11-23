@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 InstaGen Polaroid is an interactive Polaroid-style camera web application that uses Google Gemini 2.5 Flash Image API for AI-powered photo editing. Users can take photos through their webcam, drag them onto a virtual board, and apply various AI transformations.
 
-**Current Version**: v2.0.0 (UI/UX Complete Overhaul)
+**Current Version**: v2.1.0 (Code Quality & Standards)
 
 ## Development Commands
 
@@ -113,7 +113,8 @@ Camera Capture → Photo State (DEVELOPING → DONE → EDITING) → AI Edit / S
 /
 ├── api/                          # Vercel Serverless Functions
 │   ├── generate.js               # Gemini API proxy + quota check
-│   └── validate-key.js           # API key validation
+│   ├── validate-key.js           # API key validation
+│   └── config.js                 # Shared API configuration (Phase 9)
 │
 ├── components/                   # React components (root level)
 │   ├── Camera.tsx                # Webcam capture with filter wheel
@@ -145,7 +146,8 @@ Camera Capture → Photo State (DEVELOPING → DONE → EDITING) → AI Edit / S
 │   │   └── ui/
 │   │       ├── Modal.tsx         # Modal component with animations
 │   │       ├── Input.tsx         # Floating label input (Phase 8)
-│   │       └── Button.tsx        # Button component
+│   │       ├── Button.tsx        # Button component
+│   │       └── Spinner.tsx       # Loading spinner component (Phase 9)
 │   ├── services/
 │   │   ├── supabaseClient.ts     # Supabase client (auth)
 │   │   ├── authService.ts        # Auth operations
@@ -153,7 +155,10 @@ Camera Capture → Photo State (DEVELOPING → DONE → EDITING) → AI Edit / S
 │   │   └── usageService.ts       # Usage quota service
 │   ├── hooks/
 │   │   ├── useMyPhotos.ts        # Personal photos hook
-│   │   └── useUsageLimit.ts      # Usage limit hook
+│   │   ├── useUsageLimit.ts      # Usage limit hook
+│   │   └── useDrawerAnimation.ts # Drawer/Modal animation hook (Phase 9)
+│   ├── utils/                    # Utility functions (Phase 9)
+│   │   └── pokemonUtils.ts       # Pokemon config utilities
 │   ├── config/
 │   │   └── usageConfig.ts        # Quota configuration (3/day)
 │   └── types/
@@ -271,8 +276,9 @@ DEVELOPING (5s animation) → DONE (ready) → EDITING (API call) → DONE
 ## Documentation
 
 - [Architecture](./docs/ARCHITECTURE.md) - System design
+- [Code Standards](./docs/CODE_STANDARDS.md) - Code conventions and guidelines
 - [Auth System](./docs/AUTH_SYSTEM.md) - Authentication details
 - [Photo Storage](./docs/PHOTO_STORAGE.md) - Photo management
 - [Usage Limits](./docs/USAGE_LIMIT_SYSTEM.md) - Quota system
 - [API Reference](./docs/API_REFERENCE.md) - Backend APIs
-- [Roadmap](./docs/roadmap/) - Development phases (all completed)
+- [Roadmap](./docs/roadmap/) - Development phases

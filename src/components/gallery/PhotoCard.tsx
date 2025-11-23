@@ -3,7 +3,7 @@ import { Globe, Lock } from 'lucide-react';
 import { SavedPhoto } from '@/src/services/photoService';
 import { PolaroidFrame } from '@/components/PolaroidFrame';
 import { PokemonCard } from '@/components/pokemon-css/PokemonCard';
-import pokemonData from '@/components/pokemon-css/data.json';
+import { getPokemonConfig } from '@/src/utils/pokemonUtils';
 import { PhotoFrameStyle, Language } from '@/types';
 import { TRANSLATIONS } from '@/constants';
 
@@ -33,9 +33,7 @@ export const PhotoCard: React.FC<PhotoCardProps> = ({
   const config = SIZE_CONFIG[size];
 
   // Find pokemon data if photo has pokemon_id
-  const pokemonConfig = photo.pokemon_id
-    ? pokemonData.find(p => p.id === photo.pokemon_id) || pokemonData[0]
-    : null;
+  const pokemonConfig = getPokemonConfig(photo.pokemon_id);
 
   // Convert frame_style string to PhotoFrameStyle enum
   const frameStyle = (photo.frame_style as PhotoFrameStyle) || PhotoFrameStyle.CLASSIC;

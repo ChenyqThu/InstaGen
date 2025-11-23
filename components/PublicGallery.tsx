@@ -3,9 +3,10 @@ import { X, Globe, ImageIcon } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
 import { photoService } from '../src/services/photoService';
+import { useDrawerAnimation } from '@/src/hooks/useDrawerAnimation';
+import { getPokemonConfig } from '@/src/utils/pokemonUtils';
 import { PolaroidFrame } from './PolaroidFrame';
 import { PokemonCard } from './pokemon-css/PokemonCard';
-import pokemonData from './pokemon-css/data.json';
 import { TRANSLATIONS } from '../constants';
 import { Language } from '../types';
 import { INSTAGRAM_FILTERS } from '../config/filterConfig';
@@ -20,32 +21,10 @@ interface PublicGalleryProps {
 export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, lang }) => {
     const [photos, setPhotos] = useState<PhotoData[]>([]);
     const [loading, setLoading] = useState(false);
-    const [isMounted, setIsMounted] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
     const t = TRANSLATIONS[lang];
 
-    // Mount/unmount animation
-    useEffect(() => {
-        if (isOpen) {
-            setIsMounted(true);
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => setIsVisible(true));
-            });
-        } else {
-            setIsVisible(false);
-            const timer = setTimeout(() => setIsMounted(false), 350);
-            return () => clearTimeout(timer);
-        }
-    }, [isOpen]);
-
-    // Handle escape key
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) onClose();
-        };
-        window.addEventListener('keydown', handleEscape);
-        return () => window.removeEventListener('keydown', handleEscape);
-    }, [isOpen, onClose]);
+    // Animation state using shared hook
+    const { isMounted, isVisible } = useDrawerAnimation({ isOpen, onClose });
 
     useEffect(() => {
         if (isOpen) {
@@ -179,9 +158,7 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
                                 const filterClass = photo.filterId
                                     ? INSTAGRAM_FILTERS.find(f => f.id === photo.filterId)?.className || ''
                                     : '';
-                                const pokemonCard = photo.pokemonId
-                                    ? pokemonData.find(p => p.id === photo.pokemonId)
-                                    : null;
+                                const pokemonCard = getPokemonConfig(photo.pokemonId);
 
                                 return (
                                     <div

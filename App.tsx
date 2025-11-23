@@ -13,7 +13,7 @@ import { Button } from './src/components/ui/Button';
 import { ToastProvider } from './src/contexts/ToastContext';
 
 const STORAGE_KEY = 'instagen-photos';
-const MAX_STORED_PHOTOS = 10; // Limit to prevent localStorage overflow
+const MAX_STORED_PHOTOS = 5; // Reduced limit to prevent localStorage overflow (base64 images are large)
 
 const App: React.FC = () => {
   // Initialize photos from localStorage
@@ -47,20 +47,36 @@ const App: React.FC = () => {
 
   // Persist photos to localStorage whenever they change
   useEffect(() => {
-    try {
-      // Only store the most recent photos to avoid localStorage size limits
-      const photosToStore = photos.slice(-MAX_STORED_PHOTOS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(photosToStore));
-    } catch (error) {
-      console.error('Failed to save photos to localStorage:', error);
-      // If storage is full, try clearing old data
+    // Skip if no photos to store
+    if (photos.length === 0) return;
+
+    const savePhotos = (photosToSave: PhotoData[]) => {
       try {
-        localStorage.removeItem(STORAGE_KEY);
-        const photosToStore = photos.slice(-MAX_STORED_PHOTOS);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(photosToStore));
-      } catch (retryError) {
-        console.error('Still failed after clearing. Storage might be full:', retryError);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(photosToSave));
+        return true;
+      } catch {
+        return false;
       }
+    };
+
+    // Try to save most recent photos, progressively reduce count if storage is full
+    let photosToStore = photos.slice(-MAX_STORED_PHOTOS);
+
+    if (!savePhotos(photosToStore)) {
+      // Storage full - try clearing and saving fewer photos
+      localStorage.removeItem(STORAGE_KEY);
+
+      // Progressively reduce until it fits
+      for (let count = Math.min(3, photosToStore.length); count >= 1; count--) {
+        photosToStore = photos.slice(-count);
+        if (savePhotos(photosToStore)) {
+          console.log(`Saved ${count} photos after storage cleanup`);
+          return;
+        }
+      }
+      // If even 1 photo doesn't fit, clear storage entirely
+      localStorage.removeItem(STORAGE_KEY);
+      console.warn('localStorage full, photos will not persist');
     }
   }, [photos]);
 

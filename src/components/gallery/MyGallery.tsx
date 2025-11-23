@@ -1,7 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Search, ChevronDown, Camera } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useMyPhotos } from '@/src/hooks/useMyPhotos';
+import { useDrawerAnimation } from '@/src/hooks/useDrawerAnimation';
 import { SavedPhoto } from '@/src/services/photoService';
 import { PhotoCard } from './PhotoCard';
 import { GalleryPhotoModal } from './GalleryPhotoModal';
@@ -31,33 +32,11 @@ export const MyGallery: React.FC<MyGalleryProps> = ({ isOpen, onClose, lang }) =
     const [filter, setFilter] = useState<FilterType>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
-    const [isMounted, setIsMounted] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
+
+    // Animation state using shared hook
+    const { isMounted, isVisible } = useDrawerAnimation({ isOpen, onClose });
 
     const t = TRANSLATIONS[lang];
-
-    // Mount/unmount animation
-    useEffect(() => {
-        if (isOpen) {
-            setIsMounted(true);
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => setIsVisible(true));
-            });
-        } else {
-            setIsVisible(false);
-            const timer = setTimeout(() => setIsMounted(false), 350);
-            return () => clearTimeout(timer);
-        }
-    }, [isOpen]);
-
-    // Handle escape key
-    useEffect(() => {
-        const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) onClose();
-        };
-        window.addEventListener('keydown', handleEscape);
-        return () => window.removeEventListener('keydown', handleEscape);
-    }, [isOpen, onClose]);
 
     const filteredAndSortedPhotos = useMemo(() => {
         const filtered = photos.filter(photo => {

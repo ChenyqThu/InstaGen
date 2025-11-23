@@ -34,10 +34,9 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
   useEffect(() => {
     if (photo.status === PhotoStatus.DEVELOPING) {
       const timer = setTimeout(() => {
-        // When animation completes, adjust y position to account for translateY(-70%) removal
-        // Photo height is ~490px (340px image + 110px bottom padding + 40px extra) but scaled to 0.5 = ~245px
-        // The translateY(-70%) is applied to the scaled element, so offset is 170px (70% of 245px)
-        const translateOffset = 170; // -70% of scaled photo height
+        // When animation completes, adjust y position to account for translateY(-320px) removal
+        // The ejectPhoto animation ends with translateY(-320px), so we need to offset by this amount
+        const translateOffset = 320; // -320px from ejectPhoto animation end state
         const finalY = photo.y - translateOffset;
         onUpdate(photo.id, { status: PhotoStatus.DONE, y: finalY });
       }, 6000);

@@ -93,13 +93,16 @@ const App: React.FC = () => {
     };
 
     // Animation: "Eject" from the camera slot
-    // Camera is centered with pt-[100px], so it's ~50vh + 100px from top
-    // Camera height is ~400px, so bottom edge is at ~50vh + 100px + 200px
-    // Photo should appear from the bottom of camera + some spacing
-    const cameraBottomY = window.innerHeight / 2 + 100 + 250; // 100px offset + 250px (half camera height + margin)
+    // Camera container: positioned at 50vh with pt-[100px]
+    // Camera dimensions: ~400px (w-[380px] md:w-[420px] h-[380px] md:h-[420px])
+    // Calculate exact camera bottom position
+    const cameraHeight = window.innerWidth < 768 ? 380 : 420;
+    const cameraCenterY = window.innerHeight / 2 + 100; // 50vh + pt-[100px]
+    const cameraBottomY = cameraCenterY + cameraHeight / 2 - 320; // Center + half height
+
     const photoX = window.innerWidth < 768
-      ? window.innerWidth / 2 - 85  // Mobile: center
-      : window.innerWidth / 4 - 85; // Desktop: left quarter
+      ? window.innerWidth / 2 - 85  // Mobile: center (170px / 2)
+      : window.innerWidth / 4 - 85; // Desktop: left quarter (170px / 2)
 
     setPhotos(prev => [...prev, { ...newPhoto, x: photoX, y: cameraBottomY }]);
   }, []);

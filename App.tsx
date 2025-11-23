@@ -93,8 +93,15 @@ const App: React.FC = () => {
     };
 
     // Animation: "Eject" from the camera slot
-    // Position photos to appear from the top of the camera (left 1/4 of screen, visible area)
-    setPhotos(prev => [...prev, { ...newPhoto, x: window.innerWidth / 4 - 85, y: 200 }]);
+    // Camera is centered with pt-[100px], so it's ~50vh + 100px from top
+    // Camera height is ~400px, so bottom edge is at ~50vh + 100px + 200px
+    // Photo should appear from the bottom of camera + some spacing
+    const cameraBottomY = window.innerHeight / 2 + 100 + 250; // 100px offset + 250px (half camera height + margin)
+    const photoX = window.innerWidth < 768
+      ? window.innerWidth / 2 - 85  // Mobile: center
+      : window.innerWidth / 4 - 85; // Desktop: left quarter
+
+    setPhotos(prev => [...prev, { ...newPhoto, x: photoX, y: cameraBottomY }]);
   }, []);
 
   const updatePhoto = useCallback((id: string, updates: Partial<PhotoData>) => {
@@ -118,43 +125,75 @@ const App: React.FC = () => {
       />
 
       {/* Header - Logo & Title */}
-      <div className="absolute top-4 left-4 z-50 flex gap-1 items-center animate-fade-in-down">
-        {/* Logo Placeholder */}
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center">
-          {/* TODO: Replace with actual logo image */}
+      <div className="absolute top-4 left-4 z-50 flex gap-2 items-center animate-fade-in-down select-none">
+        {/* Logo */}
+        <div className="w-10 h-10 rounded-xl flex items-center justify-center">
           <img
             src="/logo.png"
             alt="InstaGen Logo"
-            className="w-8 h-8 object-contain"
+            className="w-10 h-10 object-contain"
             onError={(e) => {
               // Fallback if logo doesn't exist yet
               (e.target as HTMLImageElement).style.display = 'none';
             }}
           />
         </div>
-        <h1 className="text-2xl font-bold font-hand text-brand-primary tracking-wider opacity-70">
+        <h1 className="text-2xl font-bold font-hand bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent tracking-wide pointer-events-none">
           {TRANSLATIONS[lang].title}
         </h1>
       </div>
 
-      {/* Language Toggle & User Menu - Top Right */}
-      <div className="absolute top-6 right-8 z-50 flex items-center gap-4">
+      {/* Top Right Controls */}
+      <div className="absolute top-6 right-8 z-50 flex items-center gap-3">
+        {/* Public Gallery Entry */}
+        <button
+          onClick={() => setShowGallery(true)}
+          className="
+            flex items-center gap-2 px-3 py-2
+            bg-white/80 backdrop-blur-md
+            rounded-full
+            border border-white/50
+            shadow-sm hover:shadow-md
+            hover:-translate-y-0.5 active:translate-y-0
+            transition-all duration-200
+            group
+          "
+          title={TRANSLATIONS[lang].publicGallery}
+        >
+          <div className="w-7 h-7 rounded-lg bg-brand-primary/10 flex items-center justify-center group-hover:bg-brand-primary/20 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-brand-primary">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+            </svg>
+          </div>
+          <span className="text-sm font-medium text-text-main group-hover:text-brand-primary hidden sm:block">{TRANSLATIONS[lang].publicGallery}</span>
+        </button>
+
+        {/* Language Toggle */}
         {!isAuthenticated && (
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
             onClick={toggleLang}
-            className="bg-white/80 backdrop-blur-sm shadow-md border border-border-default text-brand-primary font-bold hover:bg-white hover:shadow-lg hover:scale-105 transition-all duration-300 group"
-            leftIcon={<span className="text-lg group-hover:animate-spin">🌍</span>}
+            className="
+              flex items-center gap-2 px-3 py-2
+              bg-white/80 backdrop-blur-md
+              rounded-full
+              border border-white/50
+              shadow-sm hover:shadow-md
+              hover:-translate-y-0.5 active:translate-y-0
+              transition-all duration-200
+              group
+            "
           >
-            {lang === 'en' ? 'English' : '中文'}
-          </Button>
+            <span className="text-lg group-hover:scale-110 transition-transform">{lang === 'en' ? '🇺🇸' : '🇨🇳'}</span>
+            <span className="text-sm font-medium text-text-main group-hover:text-brand-primary">{lang === 'en' ? 'EN' : '中文'}</span>
+          </button>
         )}
+
+        {/* User Menu */}
         <UserMenu lang={lang} onLoginClick={() => setIsLoginModalOpen(true)} />
       </div>
 
       {/* Left Section: Camera Station */}
-      <div className="absolute left-0 top-0 bottom-0 w-full md:w-1/2 flex items-center justify-center z-40 pointer-events-none">
+      <div className="absolute left-0 top-0 bottom-0 w-full md:w-1/2 flex items-center justify-center z-40 pointer-events-none pt-[100px]">
         <div className="pointer-events-auto relative animate-scale-in">
           <Camera onTakePhoto={handleTakePhoto} lang={lang} />
 
@@ -206,23 +245,11 @@ const App: React.FC = () => {
       )}
 
       {/* Footer Info */}
-      <div className="absolute bottom-4 right-4 md:right-auto md:w-full md:text-center text-text-muted text-[10px] z-0 pointer-events-none font-mono tracking-tighter">
-        POWERED BY GOOGLE GEMINI 2.5 FLASH
-      </div>
-
-      {/* Public Gallery Entry */}
-      <div className="absolute bottom-6 left-6 z-50 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-        <Button
-          onClick={() => setShowGallery(true)}
-          className="group flex items-center gap-3 pr-6 pl-1 py-1 bg-white border-2 border-brand-primary rounded-full shadow-[0_4px_14px_rgba(231,111,81,0.3)] hover:shadow-[0_6px_20px_rgba(231,111,81,0.4)] hover:scale-105 hover:bg-brand-primary hover:text-white transition-all duration-300 active:scale-95"
-        >
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-primary to-brand-secondary flex items-center justify-center text-white shadow-sm group-hover:rotate-12 transition-transform border-2 border-white">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375 0 11-.75 0 .375 0 01.75 0z" />
-            </svg>
-          </div>
-          <span className="text-lg font-hand font-bold tracking-wider text-brand-primary group-hover:text-white">{TRANSLATIONS[lang].publicGallery}</span>
-        </Button>
+      <div className="absolute bottom-4 right-4 md:right-auto md:w-full md:text-center text-text-muted text-[11px] z-0 pointer-events-none font-mono tracking-tighter flex items-center justify-center md:justify-center gap-1">
+        <span>Powered by Google Gemini 3 Pro · © 2025</span>
+        <span className="mx-1">|</span>
+        <span className="inline-block animate-spin text-pink-400" style={{ animationDuration: '3s' }}>🌸</span>
+        <span className="ml-[4px]">Made by Lucien</span>
       </div>
 
       <PublicGallery

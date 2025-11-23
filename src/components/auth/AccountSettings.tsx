@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Key, AlertTriangle, Check, Loader2, Save, Trash2, Eye, EyeOff, Globe } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, User, Key, AlertTriangle, Check, Loader2, Save, Trash2, Eye, EyeOff, Settings, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
 import { TRANSLATIONS } from '@/constants';
@@ -14,6 +15,10 @@ interface AccountSettingsProps {
 export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClose, lang = 'en' }) => {
     const { user, updateProfile } = useAuth();
     const t = TRANSLATIONS[lang];
+
+    // Animation state
+    const [isMounted, setIsMounted] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
 
     // Profile State
     const [displayName, setDisplayName] = useState('');
@@ -34,6 +39,29 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
     const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
     const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
+    // Mount/unmount animation
+    useEffect(() => {
+        if (isOpen) {
+            setIsMounted(true);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => setIsVisible(true));
+            });
+        } else {
+            setIsVisible(false);
+            const timer = setTimeout(() => setIsMounted(false), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [isOpen]);
+
+    // Handle escape key
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isOpen) onClose();
+        };
+        window.addEventListener('keydown', handleEscape);
+        return () => window.removeEventListener('keydown', handleEscape);
+    }, [isOpen, onClose]);
+
     useEffect(() => {
         if (isOpen && user) {
             setDisplayName(user.displayName || '');
@@ -41,14 +69,11 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
             setSelectedLang(user.language || lang);
             setApiKey(user.customGeminiKey || '');
             setKeyValidationStatus(user.customGeminiKey ? 'valid' : null);
-            // Reset states
             setProfileMessage(null);
             setShowDeleteConfirm(false);
             setDeleteConfirmationText('');
         }
     }, [isOpen, user]);
-
-    if (!isOpen) return null;
 
     const handleSaveProfile = async () => {
         if (!user) return;
@@ -76,7 +101,6 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
         setKeyValidationStatus(null);
 
         try {
-            // Call validation endpoint
             const response = await fetch('/api/validate-key', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -84,11 +108,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
             });
 
             const data = await response.json();
-            if (data.valid) {
-                setKeyValidationStatus('valid');
-            } else {
-                setKeyValidationStatus('invalid');
-            }
+            setKeyValidationStatus(data.valid ? 'valid' : 'invalid');
         } catch (error) {
             console.error('Key validation failed:', error);
             setKeyValidationStatus('invalid');
@@ -101,10 +121,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
         if (!user || keyValidationStatus !== 'valid') return;
         setIsSavingKey(true);
         try {
-            await updateProfile({
-                customGeminiKey: apiKey
-            });
-            // Show success feedback?
+            await updateProfile({ customGeminiKey: apiKey });
         } catch (error) {
             console.error('Failed to save key:', error);
         } finally {
@@ -114,12 +131,10 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
 
     const handleRemoveKey = async () => {
         if (!user) return;
-        if (confirm('Are you sure you want to remove your custom API key?')) {
+        if (confirm(lang === 'zh' ? '确定要移除自定义 API Key 吗？' : 'Are you sure you want to remove your custom API key?')) {
             setIsSavingKey(true);
             try {
-                await updateProfile({
-                    customGeminiKey: null // Set to null to remove
-                });
+                await updateProfile({ customGeminiKey: null });
                 setApiKey('');
                 setKeyValidationStatus(null);
             } catch (error) {
@@ -143,106 +158,149 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
         }
     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-2xl bg-[#FDF8F5] rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+    if (!isMounted) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-50">
+            {/* Backdrop */}
+            <div
+                className={`
+                    absolute inset-0 bg-black/30 backdrop-blur-sm
+                    transition-opacity duration-300
+                    ${isVisible ? 'opacity-100' : 'opacity-0'}
+                `}
+                onClick={onClose}
+            />
+
+            {/* Drawer */}
+            <div
+                className={`
+                    absolute top-0 right-0 bottom-0
+                    w-full sm:w-[480px] md:w-[520px]
+                    bg-surface-muted
+                    shadow-2xl
+                    flex flex-col
+                    transition-transform duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]
+                    ${isVisible ? 'translate-x-0' : 'translate-x-full'}
+                `}
+            >
                 {/* Header */}
-                <div className="px-6 py-4 bg-white border-b border-[#E5E5E5] flex items-center justify-between shrink-0">
-                    <h2 className="text-xl font-bold text-[#1F2937] flex items-center gap-2">
-                        <SettingsIcon className="w-6 h-6 text-[#E76F51]" />
-                        {t.accountSettings}
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-[#F5F5F4] rounded-full transition-colors"
-                    >
-                        <X className="w-6 h-6 text-[#9CA3AF]" />
-                    </button>
+                <div className="flex-none px-4 md:px-6 py-4 border-b border-border-default/50 bg-white/80 backdrop-blur-xl">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-brand-primary/10 flex items-center justify-center">
+                                <Settings className="w-5 h-5 text-brand-primary" />
+                            </div>
+                            <h2 className="text-xl font-bold text-text-main">{t.accountSettings}</h2>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="
+                                p-2 rounded-full
+                                bg-black/5 hover:bg-black/10
+                                transition-all duration-200
+                                hover:scale-110 active:scale-95
+                            "
+                        >
+                            <X className="w-5 h-5 text-text-muted" />
+                        </button>
+                    </div>
                 </div>
 
-                {/* Content - Scrollable */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
 
                     {/* Profile Section */}
-                    <section>
-                        <h3 className="text-lg font-semibold text-[#1F2937] mb-4 flex items-center gap-2">
-                            <User className="w-5 h-5 text-[#F4A261]" />
+                    <section
+                        className={`
+                            transition-all duration-300
+                            ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+                        `}
+                        style={{ transitionDelay: '100ms' }}
+                    >
+                        <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <User className="w-4 h-4" />
                             {t.profile}
                         </h3>
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#E5E5E5]/50 space-y-6">
+                        <div className="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-white/50 shadow-sm space-y-5">
                             {/* Avatar */}
-                            <div className="flex items-center gap-6">
-                                <div className="relative group">
-                                    <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-[#FFB5BA] ring-offset-2 bg-gray-100">
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <div className="w-16 h-16 rounded-full overflow-hidden ring-2 ring-brand-primary/20 ring-offset-2 bg-surface-muted">
                                         {avatarUrl ? (
                                             <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                                         ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#E76F51] to-[#F4A261] text-white text-2xl font-bold">
+                                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-primary to-brand-secondary text-white text-xl font-bold">
                                                 {displayName?.[0]?.toUpperCase() || 'U'}
                                             </div>
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex-1">
-                                    <label className="block text-sm font-medium text-[#374151] mb-1">Avatar URL</label>
+                                <div className="flex-1 min-w-0">
+                                    <label className="block text-xs font-medium text-text-muted mb-1">Avatar URL</label>
                                     <input
                                         type="text"
                                         value={avatarUrl}
                                         onChange={(e) => setAvatarUrl(e.target.value)}
                                         placeholder="https://..."
-                                        className="w-full px-4 py-2 bg-[#F5F5F4] border border-[#E5E5E5] rounded-xl focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/20 outline-none transition-all"
+                                        className="w-full px-3 py-2 text-sm bg-surface-muted border border-border-default rounded-xl focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
                                     />
                                 </div>
                             </div>
 
                             {/* Display Name */}
                             <div>
-                                <label className="block text-sm font-medium text-[#374151] mb-1">{t.displayName}</label>
+                                <label className="block text-xs font-medium text-text-muted mb-1">{t.displayName}</label>
                                 <input
                                     type="text"
                                     value={displayName}
                                     onChange={(e) => setDisplayName(e.target.value)}
-                                    className="w-full px-4 py-2 bg-[#F5F5F4] border border-[#E5E5E5] rounded-xl focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/20 outline-none transition-all"
+                                    className="w-full px-3 py-2 text-sm bg-surface-muted border border-border-default rounded-xl focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all"
                                 />
                             </div>
 
-                            {/* Email (Read-only) */}
+                            {/* Email */}
                             <div>
-                                <label className="block text-sm font-medium text-[#374151] mb-1">{t.email}</label>
-                                <div className="w-full px-4 py-2 bg-[#F5F5F4] border border-[#E5E5E5] rounded-xl text-[#9CA3AF]">
+                                <label className="block text-xs font-medium text-text-muted mb-1">{t.email}</label>
+                                <div className="w-full px-3 py-2 text-sm bg-surface-muted border border-border-default rounded-xl text-text-muted">
                                     {user?.email}
                                 </div>
                             </div>
 
                             {/* Language */}
                             <div>
-                                <label className="block text-sm font-medium text-[#374151] mb-1">{t.language}</label>
+                                <label className="block text-xs font-medium text-text-muted mb-1">{t.language}</label>
                                 <div className="relative">
                                     <select
                                         value={selectedLang}
                                         onChange={(e) => setSelectedLang(e.target.value as Language)}
-                                        className="w-full px-4 py-2 bg-[#F5F5F4] border border-[#E5E5E5] rounded-xl focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/20 outline-none transition-all appearance-none cursor-pointer"
+                                        className="w-full px-3 py-2 text-sm bg-surface-muted border border-border-default rounded-xl focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 outline-none transition-all appearance-none cursor-pointer"
                                     >
                                         <option value="en">🇺🇸 English</option>
                                         <option value="zh">🇨🇳 中文</option>
                                     </select>
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <path d="m6 9 6 6 6-6" />
-                                        </svg>
-                                    </div>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none" />
                                 </div>
                             </div>
 
                             {/* Save Button */}
-                            <div className="flex items-center justify-between">
-                                <div className={`text-sm ${profileMessage?.type === 'success' ? 'text-[#95D5B2]' : 'text-[#E63946]'}`}>
+                            <div className="flex items-center justify-between pt-2">
+                                <div className={`text-xs font-medium ${profileMessage?.type === 'success' ? 'text-status-success' : 'text-status-error'}`}>
                                     {profileMessage?.text}
                                 </div>
                                 <button
                                     onClick={handleSaveProfile}
                                     disabled={isSavingProfile}
-                                    className="px-6 py-2 bg-[#E76F51] text-white font-medium rounded-xl shadow-md hover:bg-[#D65D40] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                                    className="
+                                        px-4 py-2 text-sm
+                                        bg-gradient-to-r from-brand-primary to-brand-secondary
+                                        text-white font-medium rounded-xl
+                                        shadow-sm hover:shadow-md
+                                        hover:-translate-y-0.5 active:translate-y-0
+                                        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0
+                                        transition-all duration-200
+                                        flex items-center gap-2
+                                    "
                                 >
                                     {isSavingProfile ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                     {t.saveChanges}
@@ -251,33 +309,35 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
                         </div>
                     </section>
 
-
-
                     {/* API Settings Section */}
-                    <section>
-                        <h3 className="text-lg font-semibold text-[#1F2937] mb-4 flex items-center gap-2">
-                            <Key className="w-5 h-5 text-[#F4A261]" />
+                    <section
+                        className={`
+                            transition-all duration-300
+                            ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+                        `}
+                        style={{ transitionDelay: '200ms' }}
+                    >
+                        <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <Key className="w-4 h-4" />
                             {t.apiSettings}
                         </h3>
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-[#E5E5E5]/50 space-y-6">
+                        <div className="bg-white/80 backdrop-blur-md p-5 rounded-2xl border border-white/50 shadow-sm space-y-4">
                             {/* Status */}
                             <div className="flex items-center gap-2 text-sm">
-                                <span className="font-medium text-[#374151]">{t.currentStatus}:</span>
+                                <span className="font-medium text-text-muted">{t.currentStatus}:</span>
                                 {user?.customGeminiKey ? (
-                                    <span className="text-[#95D5B2] font-medium flex items-center gap-1">
+                                    <span className="text-status-success font-medium flex items-center gap-1">
                                         <Check className="w-4 h-4" />
                                         {t.usingCustomKey}
                                     </span>
                                 ) : (
-                                    <span className="text-[#9CA3AF] flex items-center gap-1">
-                                        {t.usingSystemKey}
-                                    </span>
+                                    <span className="text-text-muted">{t.usingSystemKey}</span>
                                 )}
                             </div>
 
                             {/* Key Input */}
                             <div>
-                                <label className="block text-sm font-medium text-[#374151] mb-1">{t.geminiApiKey}</label>
+                                <label className="block text-xs font-medium text-text-muted mb-1">{t.geminiApiKey}</label>
                                 <div className="relative">
                                     <input
                                         type={showKey ? "text" : "password"}
@@ -287,45 +347,52 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
                                             setKeyValidationStatus(null);
                                         }}
                                         placeholder="AIza..."
-                                        className={`w-full pl-4 pr-12 py-2 bg-[#F5F5F4] border rounded-xl focus:ring-2 focus:ring-[#E76F51]/20 outline-none transition-all ${keyValidationStatus === 'valid' ? 'border-[#95D5B2]' :
-                                            keyValidationStatus === 'invalid' ? 'border-[#E63946]' :
-                                                'border-[#E5E5E5] focus:border-[#E76F51]'
-                                            }`}
+                                        className={`
+                                            w-full pl-3 pr-10 py-2 text-sm
+                                            bg-surface-muted border rounded-xl
+                                            focus:ring-2 outline-none transition-all
+                                            ${keyValidationStatus === 'valid'
+                                                ? 'border-status-success focus:ring-status-success/20'
+                                                : keyValidationStatus === 'invalid'
+                                                    ? 'border-status-error focus:ring-status-error/20'
+                                                    : 'border-border-default focus:border-brand-primary focus:ring-brand-primary/20'
+                                            }
+                                        `}
                                     />
                                     <button
                                         onClick={() => setShowKey(!showKey)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#374151]"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-main transition-colors"
                                     >
                                         {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                     </button>
                                 </div>
                                 {keyValidationStatus === 'valid' && (
-                                    <p className="text-xs text-[#95D5B2] mt-1 flex items-center gap-1">
+                                    <p className="text-xs text-status-success mt-1.5 flex items-center gap-1">
                                         <Check className="w-3 h-3" /> {t.keyValid}
                                     </p>
                                 )}
                                 {keyValidationStatus === 'invalid' && (
-                                    <p className="text-xs text-[#E63946] mt-1 flex items-center gap-1">
+                                    <p className="text-xs text-status-error mt-1.5 flex items-center gap-1">
                                         <AlertTriangle className="w-3 h-3" /> {t.keyInvalid}
                                     </p>
                                 )}
                             </div>
 
                             {/* Actions */}
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between pt-2">
                                 <a
                                     href="https://aistudio.google.com/apikey"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-[#E76F51] hover:underline"
+                                    className="text-xs text-brand-primary hover:underline font-medium"
                                 >
-                                    {t.getApiKey}
+                                    {t.getApiKey} →
                                 </a>
-                                <div className="flex gap-3">
+                                <div className="flex gap-2">
                                     {user?.customGeminiKey && (
                                         <button
                                             onClick={handleRemoveKey}
-                                            className="px-4 py-2 text-[#E63946] hover:bg-[#FEF2F2] rounded-xl transition-colors text-sm font-medium"
+                                            className="px-3 py-1.5 text-xs text-status-error hover:bg-status-error/10 rounded-lg transition-colors font-medium"
                                         >
                                             {t.removeKey}
                                         </button>
@@ -333,16 +400,16 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
                                     <button
                                         onClick={handleValidateKey}
                                         disabled={!apiKey || isValidatingKey}
-                                        className="px-4 py-2 bg-white border border-[#E5E5E5] text-[#374151] rounded-xl hover:bg-[#F5F5F4] disabled:opacity-50 transition-colors text-sm font-medium"
+                                        className="px-3 py-1.5 text-xs bg-surface-muted border border-border-default text-text-main rounded-lg hover:bg-white disabled:opacity-50 transition-all font-medium"
                                     >
-                                        {isValidatingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : t.validateKey}
+                                        {isValidatingKey ? <Loader2 className="w-3 h-3 animate-spin" /> : t.validateKey}
                                     </button>
                                     <button
                                         onClick={handleSaveKey}
                                         disabled={keyValidationStatus !== 'valid' || isSavingKey}
-                                        className="px-4 py-2 bg-[#E76F51] text-white rounded-xl hover:bg-[#D65D40] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-2"
+                                        className="px-3 py-1.5 text-xs bg-brand-primary text-white rounded-lg hover:bg-brand-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center gap-1"
                                     >
-                                        {isSavingKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                        {isSavingKey ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                                         {t.saveChanges}
                                     </button>
                                 </div>
@@ -351,48 +418,52 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
                     </section>
 
                     {/* Danger Zone */}
-                    <section>
-                        <h3 className="text-lg font-semibold text-[#E63946] mb-4 flex items-center gap-2">
-                            <AlertTriangle className="w-5 h-5" />
+                    <section
+                        className={`
+                            transition-all duration-300
+                            ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+                        `}
+                        style={{ transitionDelay: '300ms' }}
+                    >
+                        <h3 className="text-sm font-semibold text-status-error uppercase tracking-wider mb-3 flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4" />
                             {t.dangerZone}
                         </h3>
-                        <div className="bg-[#FEF2F2] p-6 rounded-2xl border border-[#E63946]/20">
+                        <div className="bg-status-error/5 p-5 rounded-2xl border border-status-error/20">
                             {!showDeleteConfirm ? (
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between gap-4">
                                     <div>
-                                        <h4 className="font-medium text-[#991B1B]">{t.deleteAccount}</h4>
-                                        <p className="text-sm text-[#B91C1C]/80 mt-1">{t.deleteConfirm}</p>
+                                        <h4 className="font-medium text-status-error text-sm">{t.deleteAccount}</h4>
+                                        <p className="text-xs text-status-error/70 mt-0.5">{t.deleteAccountConfirm}</p>
                                     </div>
                                     <button
                                         onClick={() => setShowDeleteConfirm(true)}
-                                        className="px-4 py-2 bg-white border border-[#E63946]/30 text-[#E63946] rounded-xl hover:bg-[#E63946] hover:text-white transition-all text-sm font-medium"
+                                        className="px-4 py-2 text-sm bg-white border border-status-error/30 text-status-error rounded-xl hover:bg-status-error hover:text-white transition-all font-medium flex-shrink-0"
                                     >
                                         {t.deleteAccount}
                                     </button>
                                 </div>
                             ) : (
-                                <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                                    <p className="text-sm text-[#B91C1C] font-medium">
-                                        {t.typeDelete}
-                                    </p>
-                                    <div className="flex gap-3">
+                                <div className="space-y-3">
+                                    <p className="text-xs text-status-error font-medium">{t.typeDelete}</p>
+                                    <div className="flex gap-2">
                                         <input
                                             type="text"
                                             value={deleteConfirmationText}
                                             onChange={(e) => setDeleteConfirmationText(e.target.value)}
                                             placeholder="DELETE"
-                                            className="flex-1 px-4 py-2 bg-white border border-[#E63946]/30 rounded-xl focus:ring-2 focus:ring-[#E63946]/20 outline-none text-[#E63946] placeholder:text-[#E63946]/30"
+                                            className="flex-1 px-3 py-2 text-sm bg-white border border-status-error/30 rounded-xl focus:ring-2 focus:ring-status-error/20 outline-none text-status-error placeholder:text-status-error/30"
                                         />
                                         <button
                                             onClick={() => setShowDeleteConfirm(false)}
-                                            className="px-4 py-2 bg-white text-[#374151] rounded-xl hover:bg-[#F5F5F4] transition-colors text-sm font-medium"
+                                            className="px-3 py-2 text-sm bg-white text-text-main rounded-xl hover:bg-surface-muted transition-colors font-medium"
                                         >
                                             {t.cancel}
                                         </button>
                                         <button
                                             onClick={handleDeleteAccount}
                                             disabled={deleteConfirmationText !== 'DELETE' || isDeletingAccount}
-                                            className="px-4 py-2 bg-[#E63946] text-white rounded-xl hover:bg-[#DC2626] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center gap-2"
+                                            className="px-3 py-2 text-sm bg-status-error text-white rounded-xl hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium flex items-center gap-1"
                                         >
                                             {isDeletingAccount ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                                             {t.permanentlyDelete}
@@ -403,15 +474,8 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
                         </div>
                     </section>
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>,
+        document.body
     );
 };
-
-// Helper component for the header icon
-const SettingsIcon = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-        <circle cx="12" cy="12" r="3" />
-    </svg>
-);

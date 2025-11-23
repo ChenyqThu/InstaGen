@@ -109,6 +109,11 @@ export const TRANSLATIONS = {
     updateError: 'Failed to update photo',
     unsavedChanges: 'You have unsaved changes. Are you sure you want to close?',
 
+    // Editor Tabs
+    tabFrames: 'Frames',
+    tabEffects: 'Effects',
+    tabMagic: 'Magic',
+
     // Phase 6: Gallery UI/UX
     searchPlaceholder: 'Search photos...',
     sortNewest: 'Newest first',
@@ -233,6 +238,11 @@ export const TRANSLATIONS = {
     updateError: '更新照片失败',
     unsavedChanges: '有未保存的更改，确定要关闭吗？',
 
+    // Editor Tabs
+    tabFrames: '相框',
+    tabEffects: '特效',
+    tabMagic: '魔法',
+
     // Phase 6: Gallery UI/UX
     searchPlaceholder: '搜索照片...',
     sortNewest: '最新优先',
@@ -255,9 +265,51 @@ export const TRANSLATIONS = {
   }
 };
 
-export const FRAME_STYLES = {
-  [PhotoFrameStyle.CLASSIC]: 'bg-[#fdfdfd] text-gray-800',
-  [PhotoFrameStyle.BLACK]: 'bg-[#1a1a1a] text-gray-200',
-  [PhotoFrameStyle.COLORFUL]: 'bg-gradient-to-br from-pink-100 to-yellow-100 text-pink-800',
+export const FRAME_STYLES: Record<PhotoFrameStyle, string> = {
+  // Classic Series - 经典系列
+  [PhotoFrameStyle.CLASSIC]: 'bg-[#fdfdfd] text-[#333333]',
+  [PhotoFrameStyle.BLACK]: 'bg-[#1a1a1a] text-[#f0f0f0]',
   [PhotoFrameStyle.VINTAGE]: 'bg-[#f4e4bc] text-[#5c4033]',
+  [PhotoFrameStyle.KRAFT]: 'bg-[#c4a77d] text-[#2d1f0f]',
+  // Colorful Series - 彩色系列
+  [PhotoFrameStyle.SKY_BLUE]: 'bg-[#87ceeb] text-[#1a3a5c]',
+  [PhotoFrameStyle.PINK]: 'bg-[#ffb6c1] text-[#6b1a3a]',
+  [PhotoFrameStyle.MINT]: 'bg-[#98fb98] text-[#1a5c3a]',
+  [PhotoFrameStyle.COLORFUL]: 'bg-gradient-to-br from-pink-200 to-yellow-200 text-[#6b3a5c]',
+  [PhotoFrameStyle.RAINBOW]: 'bg-gradient-to-r from-red-200 via-yellow-200 via-green-200 via-blue-200 to-purple-200 text-[#4a3a6b]',
+  // Creative Series - 创意系列
+  [PhotoFrameStyle.ROSE_GOLD]: 'bg-gradient-to-br from-[#f4c4c4] to-[#e8b4b4] text-[#5c2a1a]',
+  [PhotoFrameStyle.MARBLE]: 'bg-gradient-to-br from-gray-100 via-white to-gray-200 text-[#3a3a3a]',
+  [PhotoFrameStyle.WOOD]: 'bg-gradient-to-b from-[#deb887] to-[#a67c52] text-[#2d1f0f]',
+  [PhotoFrameStyle.STARRY]: 'bg-gradient-to-b from-[#1a1a2e] to-[#16213e] text-[#e8e8e8]',
+  [PhotoFrameStyle.BEACH]: 'bg-gradient-to-b from-[#87ceeb] to-[#f5e6a3] text-[#2a4a4a]',
+  [PhotoFrameStyle.DUOCHROME]: 'bg-gradient-to-br from-[#ff6b6b] to-[#4ecdc4] text-[#ffffff]',
+  [PhotoFrameStyle.CONFETTI]: 'bg-[#fff8e7] text-[#3a3a3a]',
+};
+
+// Frame style names for display
+export const FRAME_STYLE_NAMES: Record<PhotoFrameStyle, { en: string; zh: string }> = {
+  [PhotoFrameStyle.CLASSIC]: { en: 'Classic', zh: '经典白' },
+  [PhotoFrameStyle.BLACK]: { en: 'Black', zh: '经典黑' },
+  [PhotoFrameStyle.VINTAGE]: { en: 'Vintage', zh: '复古' },
+  [PhotoFrameStyle.KRAFT]: { en: 'Kraft', zh: '牛皮纸' },
+  [PhotoFrameStyle.SKY_BLUE]: { en: 'Sky Blue', zh: '天蓝' },
+  [PhotoFrameStyle.PINK]: { en: 'Pink', zh: '粉色' },
+  [PhotoFrameStyle.MINT]: { en: 'Mint', zh: '薄荷' },
+  [PhotoFrameStyle.COLORFUL]: { en: 'Colorful', zh: '彩虹糖' },
+  [PhotoFrameStyle.RAINBOW]: { en: 'Rainbow', zh: '彩虹' },
+  [PhotoFrameStyle.ROSE_GOLD]: { en: 'Rose Gold', zh: '玫瑰金' },
+  [PhotoFrameStyle.MARBLE]: { en: 'Marble', zh: '大理石' },
+  [PhotoFrameStyle.WOOD]: { en: 'Wood', zh: '木纹' },
+  [PhotoFrameStyle.STARRY]: { en: 'Starry', zh: '星空' },
+  [PhotoFrameStyle.BEACH]: { en: 'Beach', zh: '海滩' },
+  [PhotoFrameStyle.DUOCHROME]: { en: 'Duochrome', zh: '双色' },
+  [PhotoFrameStyle.CONFETTI]: { en: 'Confetti', zh: '彩纸' },
+};
+
+// Category names for display
+export const FRAME_CATEGORY_NAMES = {
+  classic: { en: 'Classic', zh: '经典系列' },
+  colorful: { en: 'Colorful', zh: '彩色系列' },
+  creative: { en: 'Creative', zh: '创意系列' },
 };

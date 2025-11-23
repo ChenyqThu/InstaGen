@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { INSTAGRAM_FILTERS, FilterConfig } from '../config/filterConfig';
 import { Language } from '../types';
 
@@ -11,6 +11,33 @@ interface FilterWheelProps {
 
 const TOOTH_HEIGHT = 1; // Shallow teeth for grip texture
 const KNURL_TEETH = 180; // Dense teeth for friction knurl effect
+
+// Vertical slide text animation component with random delay
+const SlideText: React.FC<{ text: string; animationKey: string }> = ({ text, animationKey }) => {
+  const chars = text.toUpperCase().split('');
+
+  // Generate random delays for each character, memoized by animationKey
+  const randomDelays = useMemo(() => {
+    return chars.map(() => Math.random() * 150);
+  }, [animationKey, chars.length]);
+
+  return (
+    <span className="inline-flex overflow-hidden">
+      {chars.map((char, index) => (
+        <span
+          key={`${animationKey}-${index}`}
+          className="inline-block animate-slide-down"
+          style={{
+            animationDelay: `${randomDelays[index]}ms`,
+            animationFillMode: 'both',
+          }}
+        >
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      ))}
+    </span>
+  );
+};
 
 export const FilterWheel: React.FC<FilterWheelProps> = ({
   currentFilter,
@@ -224,7 +251,7 @@ export const FilterWheel: React.FC<FilterWheelProps> = ({
         {/* Filter name display - Colored pill with high contrast */}
         <div className="px-4 py-1.5 bg-[#E76F51]/90 backdrop-blur-sm border border-white/20 rounded-full shadow-lg transition-all hover:scale-105">
           <span className="text-white text-xs font-bold tracking-widest whitespace-nowrap drop-shadow-sm">
-            {currentFilter.name[lang].toUpperCase()}
+            <SlideText text={currentFilter.name[lang]} animationKey={currentFilter.id} />
           </span>
         </div>
       </div>

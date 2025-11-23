@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../src/components/ui/Button';
-import { Input } from '../src/components/ui/Input';
-import { EditOption, Language, PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
-import { EDIT_OPTIONS, FRAME_STYLES, TRANSLATIONS } from '../constants';
+import { Language, PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
+import { TRANSLATIONS } from '../constants';
 import { editImageWithGemini } from '../services/geminiService';
 import { PolaroidFrame } from './PolaroidFrame';
 import { PokemonCard } from './pokemon-css/PokemonCard';
@@ -11,6 +10,7 @@ import { useUsageLimit } from '../src/hooks/useUsageLimit';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useMyPhotos } from '../src/hooks/useMyPhotos';
 import { useToast } from '../src/contexts/ToastContext';
+import { EditorTabs, EditorTabKey, FrameStylePicker, CardEffectPicker, MagicEditPanel } from '../src/components/editor';
 
 interface PhotoModalProps {
   photo: PhotoData;
@@ -31,12 +31,14 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   onLoginRequest,
   lang,
 }) => {
-  const [customPrompt, setCustomPrompt] = useState('');
+  const [activeTab, setActiveTab] = useState<EditorTabKey>('frames');
   const [isProcessing, setIsProcessing] = useState(false);
   const [tempCaption, setTempCaption] = useState(photo.caption || '');
-  const [selectedPokemonId, setSelectedPokemonId] = useState<string>(photo.pokemonId || pokemonData[0].id);
+  const [selectedPokemonId, setSelectedPokemonId] = useState<string>(photo.pokemonId || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [showPinConfirm, setShowPinConfirm] = useState(false);
+  const [isPinning, setIsPinning] = useState(false);
   const t = TRANSLATIONS[lang];
   const { isAuthenticated } = useAuth();
   const { canUseService, remainingCalls, hasCustomKey, refresh } = useUsageLimit();
@@ -48,10 +50,14 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
     setTempCaption(photo.caption || '');
   }, [photo.caption, isOpen]);
 
+  // Sync selectedPokemonId when photo changes
+  useEffect(() => {
+    setSelectedPokemonId(photo.pokemonId || '');
+  }, [photo.pokemonId]);
+
   if (!isOpen) return null;
 
-  const handleAIEdit = async (option?: EditOption) => {
-    const prompt = option ? option.prompt : customPrompt;
+  const handleAIEdit = async (prompt: string) => {
     if (!prompt) return;
 
     setIsProcessing(true);
@@ -64,14 +70,11 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
         status: PhotoStatus.DONE,
         promptUsed: prompt
       });
-      setCustomPrompt('');
-      // Refresh usage info after successful API call
       refresh();
     } catch (error: any) {
       console.error(error);
       onUpdate(photo.id, { status: PhotoStatus.DONE });
 
-      // Handle specific error types
       if (error.message === 'auth_required') {
         warning(t.loginToUse);
       } else if (error.message === 'quota_exceeded') {
@@ -90,10 +93,9 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   };
 
   const handleSave = async () => {
-    // If not authenticated, close modal and open login
     if (!isAuthenticated) {
-      onClose(); // Close the photo modal
-      onLoginRequest(); // Open login modal
+      onClose();
+      onLoginRequest();
       return;
     }
 
@@ -119,12 +121,25 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   };
 
   const handleClose = () => {
-    // Ensure caption is saved on close if it changed
     if (tempCaption !== photo.caption) {
       onUpdate(photo.id, { caption: tempCaption });
     }
     onClose();
   };
+
+  const handleFrameStyleChange = (style: PhotoFrameStyle) => {
+    onUpdate(photo.id, { frameStyle: style });
+  };
+
+  const handlePokemonIdChange = (id: string | undefined) => {
+    setSelectedPokemonId(id || '');
+    onUpdate(photo.id, { pokemonId: id });
+  };
+
+  // Get pokemon config for preview
+  const pokemonConfig = photo.pokemonId
+    ? pokemonData.find(p => p.id === photo.pokemonId) || pokemonData[0]
+    : null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8">
@@ -132,12 +147,10 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
         onClick={handleClose}
-      ></div>
+      />
 
       {/* Modal Content */}
       <div className="relative w-full max-w-5xl h-[85vh] bg-[#FAFAFA] rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
-
-        {/* Close Button */}
         {/* Close Button */}
         <div className="absolute top-4 right-4 z-50">
           <Button
@@ -154,10 +167,74 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 
         {/* LEFT: Image Preview Area */}
         <div className="flex-1 bg-gray-200/50 flex items-center justify-center p-6 relative overflow-hidden bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
-          {photo.pokemonId ? (
+          {/* Pin to Gallery Button */}
+          <button
+            onClick={() => setShowPinConfirm(true)}
+            disabled={isPinning}
+            className="absolute top-4 left-4 z-40 w-10 h-10 bg-white/90 hover:bg-white rounded-full shadow-md flex items-center justify-center transition-all hover:scale-105 disabled:opacity-50"
+            title={t.pinToGallery}
+          >
+            {isPinning ? (
+              <div className="w-4 h-4 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-pink-500">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+              </svg>
+            )}
+          </button>
+
+          {/* Pin Confirmation Modal */}
+          {showPinConfirm && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+              <div className="bg-white rounded-2xl shadow-xl p-5 mx-4 max-w-sm w-full animate-in zoom-in-95 duration-200">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-pink-500">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800">{t.pinToGallery}</h4>
+                    <p className="text-sm text-gray-500">{lang === 'zh' ? '分享到公共画廊，所有人可见' : 'Share to public gallery for everyone to see'}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={() => setShowPinConfirm(false)}
+                    className="flex-1 py-2.5 px-4 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                  >
+                    {t.cancel}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        setIsPinning(true);
+                        const { photoService } = await import('../src/services/photoService');
+                        await photoService.pinPhotoToPublic(photo);
+                        success(t.pinSuccess);
+                        setShowPinConfirm(false);
+                      } catch (error) {
+                        console.error(error);
+                        toastError(t.pinError);
+                      } finally {
+                        setIsPinning(false);
+                      }
+                    }}
+                    disabled={isPinning}
+                    className="flex-1 py-2.5 px-4 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 rounded-xl transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isPinning && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                    {t.pinToGallery}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {pokemonConfig ? (
             <div className="w-[340px] h-[470px] relative z-10">
               <PokemonCard
-                {...pokemonData.find(p => p.id === selectedPokemonId)!}
+                {...pokemonConfig}
                 img={photo.dataUrl}
                 name={tempCaption || t.defaultCaption}
                 className="w-full h-full"
@@ -195,234 +272,90 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
         </div>
 
         {/* RIGHT: Controls Area */}
-        <div className="w-full md:w-[480px] bg-white flex flex-col border-l border-gray-100">
-          <div className="p-6 flex-1 overflow-y-auto no-scrollbar">
-            <h2 className="text-2xl font-bold text-gray-800 font-hand mb-6">{t.expand}</h2>
+        <div className="w-full md:w-[500px] bg-white flex flex-col border-l border-gray-100">
+          {/* Header */}
+          <div className="p-5 pb-0">
+            <h2 className="text-xl font-bold text-gray-800 font-hand mb-4">{t.expand}</h2>
+          </div>
 
-            {/* Style Selector */}
-            <div className="mb-8">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t.styles}</h3>
-              <div className="flex gap-3 flex-wrap">
-                {Object.values(PhotoFrameStyle).map((style) => (
-                  <button
-                    key={style}
-                    onClick={() => onUpdate(photo.id, { frameStyle: style })}
-                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-transform hover:scale-110 ${photo.frameStyle === style ? 'border-brand-primary ring-2 ring-brand-primary/20' : 'border-gray-300'} ${FRAME_STYLES[style]}`}
-                    title={style}
+          {/* Tab Content */}
+          <div className="flex-1 px-5 pb-2 overflow-hidden">
+            <EditorTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              lang={lang}
+              magicBadge={
+                <span className="ml-1 inline-block px-1.5 py-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-[9px] rounded-full font-medium">
+                  AI
+                </span>
+              }
+            >
+              {{
+                frames: (
+                  <FrameStylePicker
+                    selectedStyle={photo.frameStyle}
+                    onStyleChange={handleFrameStyleChange}
+                    lang={lang}
                   />
-                ))}
-              </div>
-            </div>
-
-            {/* Card Effect Selector */}
-            <div className="mb-8">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t.cardEffect}</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {/* None option */}
-                <button
-                  onClick={() => {
-                    setSelectedPokemonId('');
-                    onUpdate(photo.id, { pokemonId: undefined });
-                  }}
-                  className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${!photo.pokemonId ? 'border-brand-primary ring-2 ring-brand-primary/20' : 'border-gray-300'
-                    }`}
-                  title={t.cardEffectNone}
-                >
-                  <div className="w-full h-full relative">
-                    <img
-                      src="/assets/previews/original.png"
-                      alt={t.cardEffectNone}
-                      className="w-full h-full object-cover object-top"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] font-bold py-0.5 px-1 text-center truncate">
-                      {t.cardEffectNone}
-                    </div>
-                  </div>
-                </button>
-
-                {/* Pokemon effect options */}
-                {pokemonData.map((card) => (
-                  <button
-                    key={card.id}
-                    onClick={() => {
-                      setSelectedPokemonId(card.id);
-                      onUpdate(photo.id, { pokemonId: card.id });
-                    }}
-                    className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${photo.pokemonId === card.id ? 'border-brand-primary ring-2 ring-brand-primary/20' : 'border-gray-300'
-                      }`}
-                    title={card.name}
-                  >
-                    <div className="w-full h-full relative">
-                      <PokemonCard
-                        {...card}
-                        img="/assets/previews/original.png"
-                        name=""
-                        className="w-full h-full"
-                      >
-                        <img
-                          src="/assets/previews/original.png"
-                          alt={card.name}
-                          className="w-full h-full object-cover object-top"
-                        />
-                      </PokemonCard>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] font-bold py-0.5 px-1 text-center truncate">
-                      {card.name}
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-
-            </div>
-
-            {/* Magic Edit Section */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                  {t.magic} <span className="inline-block px-1.5 py-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-[10px] rounded-full">GEMINI</span>
-                </h3>
-                {/* Usage Info Display */}
-                {isAuthenticated && (
-                  <div className="text-xs">
-                    {hasCustomKey ? (
-                      <span className="text-green-600 font-medium">✨ {t.unlimitedUse}</span>
-                    ) : (
-                      <span className="text-gray-600">
-                        {t.remainingToday}: {remainingCalls}/3
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Login/Quota Messages */}
-              {!isAuthenticated && (
-                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-                  🔑 {t.loginToUse}
-                </div>
-              )}
-              {isAuthenticated && !canUseService && (
-                <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-700">
-                  💡 {t.addApiKeyTip}
-                </div>
-              )}
-
-              {/* Scrollable Preview Grid */}
-              <div className="max-h-[320px] overflow-y-auto mb-4 pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                <div className="grid grid-cols-3 gap-2">
-                  {EDIT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.key}
-                      disabled={!canUseService || isProcessing}
-                      onClick={() => handleAIEdit(opt)}
-                      className="group relative overflow-hidden bg-gray-50 hover:bg-indigo-50 rounded-xl border border-gray-100 transition-all text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md"
-                    >
-                      {/* Preview Image */}
-                      {opt.previewImage ? (
-                        <div className="w-full aspect-[3/4] overflow-hidden rounded-t-xl bg-gray-200">
-                          <img
-                            src={opt.previewImage}
-                            alt={opt.label[lang]}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                            onError={(e) => {
-                              // Fallback if image fails to load
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full aspect-[3/4] bg-gradient-to-br from-indigo-100 to-purple-100 rounded-t-xl" />
-                      )}
-
-                      {/* Label */}
-                      <div className="p-2 text-center group-hover:text-indigo-600 transition-colors">
-                        {opt.label[lang]}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Input */}
-              <div className="relative">
-                <Input
-                  value={customPrompt}
-                  disabled={!canUseService || isProcessing}
-                  onChange={(e) => setCustomPrompt(e.target.value)}
-                  placeholder={t.customPromptPlaceholder}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAIEdit()}
-                  className="pr-12"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                  <Button
-                    size="icon"
-                    onClick={() => handleAIEdit()}
-                    disabled={!canUseService || !customPrompt || isProcessing}
-                    className="w-8 h-8 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors p-0"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                    </svg>
-                  </Button>
-                </div>
-              </div>
-            </div>
+                ),
+                effects: (
+                  <CardEffectPicker
+                    selectedPokemonId={photo.pokemonId}
+                    onPokemonIdChange={handlePokemonIdChange}
+                    lang={lang}
+                  />
+                ),
+                magic: (
+                  <MagicEditPanel
+                    lang={lang}
+                    isAuthenticated={isAuthenticated}
+                    canUseService={canUseService}
+                    hasCustomKey={hasCustomKey}
+                    remainingCalls={remainingCalls}
+                    isProcessing={isProcessing}
+                    onEdit={handleAIEdit}
+                  />
+                ),
+              }}
+            </EditorTabs>
           </div>
 
           {/* Bottom Actions */}
-          <div className="p-6 border-t border-gray-100 bg-gray-50/50 space-y-3">
+          <div className="p-5 border-t border-gray-100 bg-gray-50/50 space-y-2.5">
             <Button
               onClick={handleSave}
               disabled={isSaved || isSaving}
               title={!isAuthenticated ? (lang === 'zh' ? '点击登录以保存' : 'Click to login and save') : ''}
-              className={`w-full py-3 rounded-xl font-medium text-sm shadow-sm transition-colors ${isSaved
+              className={`w-full py-3 rounded-xl font-medium text-sm shadow-sm transition-all ${isSaved
                 ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-                : !isAuthenticated
-                  ? 'bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:shadow-md'
-                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+                : 'bg-gradient-to-r from-[#E76F51] to-[#F4A261] text-white hover:shadow-lg hover:scale-[1.01]'
                 }`}
             >
               {isSaving ? (
-                <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
               ) : isSaved ? (
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
-              ) : null}
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M9 12l3 3m0 0l3-3m-3 3V2.25" />
+                </svg>
+              )}
               {isSaved ? t.alreadySaved : t.savePhoto}
             </Button>
             <Button
-              onClick={async () => {
-                try {
-                  setIsProcessing(true);
-                  const { photoService } = await import('../src/services/photoService');
-                  await photoService.pinPhotoToPublic(photo);
-                  success(t.pinSuccess);
-                } catch (error) {
-                  console.error(error);
-                  toastError(t.pinError);
-                } finally {
-                  setIsProcessing(false);
-                }
-              }}
-              className="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium text-sm hover:from-pink-600 hover:to-rose-600 transition-colors shadow-sm"
+              variant="ghost"
+              onClick={handleDelete}
+              className="w-full py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
               </svg>
-              {t.pinToGallery}
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDelete}
-              className="w-full py-3 rounded-xl text-sm font-medium transition-colors"
-            >
               {t.delete}
             </Button>
           </div>
         </div>
-
       </div>
     </div>
   );

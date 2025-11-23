@@ -134,7 +134,7 @@ export const PolaroidFrame = React.forwardRef<HTMLDivElement, PolaroidFrameProps
         ref={captionRef}
         contentEditable={editable}
         suppressContentEditableWarning
-        className="absolute text-center font-hand text-[#222] opacity-90 leading-[1.1] outline-none"
+        className="absolute text-center font-hand opacity-90 leading-[1.1] outline-none"
         style={{
           bottom: `${52 * scale}px`,
           left: `${20 * scale}px`,
@@ -202,7 +202,7 @@ export const PolaroidFrame = React.forwardRef<HTMLDivElement, PolaroidFrameProps
 
       {/* Date */}
       <div
-        className="absolute text-center font-hand select-none text-[#555] leading-[1.1] pointer-events-none"
+        className="absolute text-center font-hand select-none opacity-70 leading-[1.1] pointer-events-none"
         style={{
           bottom: `${16 * scale}px`, // approx 4 (scale 0.25) -> 16 (scale 1)
           left: `${20 * scale}px`,

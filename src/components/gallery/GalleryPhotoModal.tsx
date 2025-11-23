@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import html2canvas from 'html2canvas';
-import { X, Download, Share2, Lock, Trash2, Globe } from 'lucide-react';
+import { X, Download, Lock, Trash2, Globe } from 'lucide-react';
 import { SavedPhoto } from '@/src/services/photoService';
 import { PolaroidFrame } from '@/components/PolaroidFrame';
 import { PokemonCard } from '@/components/pokemon-css/PokemonCard';
 import pokemonData from '@/components/pokemon-css/data.json';
 import { PhotoFrameStyle, Language } from '@/types';
-import { EDIT_OPTIONS, FRAME_STYLES, TRANSLATIONS } from '@/constants';
+import { TRANSLATIONS } from '@/constants';
 import { editImageWithGemini } from '@/services/geminiService';
 import { useUsageLimit } from '@/src/hooks/useUsageLimit';
 import { useAuth } from '@/src/contexts/AuthContext';
+import { EditorTabs, EditorTabKey, FrameStylePicker, CardEffectPicker, MagicEditPanel } from '@/src/components/editor';
 
 interface GalleryPhotoModalProps {
   photo: SavedPhoto;
@@ -37,9 +38,11 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
   const { canUseService, remainingCalls, hasCustomKey, refresh } = useUsageLimit();
   const cardRef = useRef<HTMLDivElement>(null);
 
+  // Tab state
+  const [activeTab, setActiveTab] = useState<EditorTabKey>('frames');
+
   // Local state for editing
   const [localPhoto, setLocalPhoto] = useState<SavedPhoto>(photo);
-  const [customPrompt, setCustomPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,6 +72,14 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
     setHasChanges(true);
   };
 
+  const handleFrameStyleChange = (style: PhotoFrameStyle) => {
+    handleLocalUpdate({ frame_style: style });
+  };
+
+  const handlePokemonIdChange = (id: string | undefined) => {
+    handleLocalUpdate({ pokemon_id: id });
+  };
+
   const handleAIEdit = async (prompt: string) => {
     if (!prompt || isProcessing) return;
 
@@ -79,7 +90,6 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
         data_url: newImage,
         prompt_used: prompt,
       });
-      setCustomPrompt('');
       refresh();
     } catch (error: any) {
       console.error(error);
@@ -123,18 +133,14 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
     setIsDownloading(true);
     try {
       const element = cardRef.current;
-
-      // Find the main photo image
       const photoImg = element.querySelector('img[data-main-photo="true"]') as HTMLImageElement;
       if (!photoImg) {
         throw new Error('Photo image not found');
       }
 
-      // Store original src and styles
       const originalSrc = photoImg.src;
       const originalObjectFit = photoImg.style.objectFit;
 
-      // Helper function to crop image to Polaroid frame aspect ratio (300:340 = 15:17)
       const cropImageToFrameRatio = (imgSrc: string): Promise<string> => {
         return new Promise((resolve, reject) => {
           const img = new Image();
@@ -147,20 +153,17 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
               return;
             }
 
-            // Target aspect ratio: 300:340 = 15:17
             const targetRatio = 300 / 340;
             const sourceRatio = img.width / img.height;
 
             let cropWidth, cropHeight, sx, sy;
 
             if (sourceRatio > targetRatio) {
-              // Image is wider - crop width
               cropHeight = img.height;
               cropWidth = img.height * targetRatio;
               sx = (img.width - cropWidth) / 2;
               sy = 0;
             } else {
-              // Image is taller - crop height
               cropWidth = img.width;
               cropHeight = img.width / targetRatio;
               sx = 0;
@@ -170,7 +173,6 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
             canvas.width = cropWidth;
             canvas.height = cropHeight;
 
-            // Draw cropped image
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(img, sx, sy, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
@@ -182,19 +184,15 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
         });
       };
 
-      // Crop the photo to frame aspect ratio
       const croppedSrc = await cropImageToFrameRatio(localPhoto.data_url);
 
-      // Temporarily update the image
       photoImg.src = croppedSrc;
       photoImg.style.objectFit = 'fill';
 
-      // Wait for DOM to update
       await new Promise(resolve => requestAnimationFrame(() => {
         requestAnimationFrame(resolve);
       }));
 
-      // Render with html2canvas
       const canvas = await html2canvas(element, {
         backgroundColor: null,
         scale: 4,
@@ -204,11 +202,9 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
         imageTimeout: 15000,
       });
 
-      // Restore original image immediately
       photoImg.src = originalSrc;
       photoImg.style.objectFit = originalObjectFit;
 
-      // Download
       const link = document.createElement('a');
       link.download = `instagen-${photo.id}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
@@ -334,175 +330,62 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
         </div>
 
         {/* RIGHT: Controls */}
-        <div className="w-full md:w-[480px] bg-white flex flex-col border-l border-gray-100">
-          <div className="p-6 flex-1 overflow-y-auto no-scrollbar">
-            <h2 className="text-2xl font-bold text-gray-800 font-hand mb-6">{t.editPhoto}</h2>
+        <div className="w-full md:w-[500px] bg-white flex flex-col border-l border-gray-100">
+          {/* Header */}
+          <div className="p-5 pb-0">
+            <h2 className="text-xl font-bold text-gray-800 font-hand mb-4">{t.editPhoto}</h2>
+          </div>
 
-            {/* Frame Style Selector */}
-            <div className="mb-8">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t.styles}</h3>
-              <div className="flex gap-3 flex-wrap">
-                {Object.values(PhotoFrameStyle).map((style) => (
-                  <button
-                    key={style}
-                    onClick={() => handleLocalUpdate({ frame_style: style })}
-                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-transform hover:scale-110 ${frameStyle === style ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
-                      } ${FRAME_STYLES[style]}`}
-                    title={style}
+          {/* Tab Content */}
+          <div className="flex-1 px-5 pb-2 overflow-hidden">
+            <EditorTabs
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              lang={lang}
+              magicBadge={
+                <span className="ml-1 inline-block px-1.5 py-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-[9px] rounded-full font-medium">
+                  AI
+                </span>
+              }
+            >
+              {{
+                frames: (
+                  <FrameStylePicker
+                    selectedStyle={frameStyle}
+                    onStyleChange={handleFrameStyleChange}
+                    lang={lang}
                   />
-                ))}
-              </div>
-            </div>
-
-            {/* Card Effect Selector */}
-            <div className="mb-8">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">{t.cardEffect}</h3>
-              <div className="grid grid-cols-4 gap-2">
-                {/* None option */}
-                <button
-                  onClick={() => handleLocalUpdate({ pokemon_id: undefined })}
-                  className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${!localPhoto.pokemon_id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
-                    }`}
-                  title={t.cardEffectNone}
-                >
-                  <div className="w-full h-full relative">
-                    <img
-                      src="/assets/previews/original.png"
-                      alt={t.cardEffectNone}
-                      className="w-full h-full object-cover object-top"
-                    />
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] font-bold py-0.5 px-1 text-center truncate">
-                      {t.cardEffectNone}
-                    </div>
-                  </div>
-                </button>
-
-                {/* Pokemon effects */}
-                {pokemonData.map((card) => (
-                  <button
-                    key={card.id}
-                    onClick={() => handleLocalUpdate({ pokemon_id: card.id })}
-                    className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${localPhoto.pokemon_id === card.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
-                      }`}
-                    title={card.name}
-                  >
-                    <div className="w-full h-full relative">
-                      <PokemonCard
-                        {...card}
-                        img="/assets/previews/original.png"
-                        name=""
-                        className="w-full h-full"
-                      >
-                        <img
-                          src="/assets/previews/original.png"
-                          alt={card.name}
-                          className="w-full h-full object-cover object-top"
-                        />
-                      </PokemonCard>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[8px] font-bold py-0.5 px-1 text-center truncate">
-                      {card.name}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Magic Edit Section */}
-            <div className="mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                  {t.magic}
-                  <span className="inline-block px-1.5 py-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white text-[10px] rounded-full">
-                    GEMINI
-                  </span>
-                </h3>
-                {isAuthenticated && (
-                  <div className="text-xs">
-                    {hasCustomKey ? (
-                      <span className="text-green-600 font-medium">✨ {t.unlimitedUse}</span>
-                    ) : (
-                      <span className="text-gray-600">
-                        {t.remainingToday}: {remainingCalls}/3
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Messages */}
-              {!isAuthenticated && (
-                <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
-                  🔑 {t.loginToUse}
-                </div>
-              )}
-              {isAuthenticated && !canUseService && (
-                <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-700">
-                  💡 {t.addApiKeyTip}
-                </div>
-              )}
-
-              {/* Edit Options Grid */}
-              <div className="max-h-[240px] overflow-y-auto mb-4 pr-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                <div className="grid grid-cols-3 gap-2">
-                  {EDIT_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.key}
-                      disabled={!canUseService || isProcessing}
-                      onClick={() => handleAIEdit(opt.prompt)}
-                      className="group relative overflow-hidden bg-gray-50 hover:bg-indigo-50 rounded-xl border border-gray-100 transition-all text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md"
-                    >
-                      {opt.previewImage ? (
-                        <div className="w-full aspect-[3/4] overflow-hidden rounded-t-xl bg-gray-200">
-                          <img
-                            src={opt.previewImage}
-                            alt={opt.label[lang]}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                        </div>
-                      ) : (
-                        <div className="w-full aspect-[3/4] bg-gradient-to-br from-indigo-100 to-purple-100 rounded-t-xl" />
-                      )}
-                      <div className="p-2 text-center group-hover:text-indigo-600 transition-colors">
-                        {opt.label[lang]}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Prompt Input */}
-              <div className="relative">
-                <input
-                  type="text"
-                  value={customPrompt}
-                  disabled={!canUseService || isProcessing}
-                  onChange={(e) => setCustomPrompt(e.target.value)}
-                  placeholder={t.customPromptPlaceholder}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAIEdit(customPrompt)}
-                  className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                <button
-                  onClick={() => handleAIEdit(customPrompt)}
-                  disabled={!canUseService || !customPrompt || isProcessing}
-                  className="absolute right-2 top-2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+                ),
+                effects: (
+                  <CardEffectPicker
+                    selectedPokemonId={localPhoto.pokemon_id}
+                    onPokemonIdChange={handlePokemonIdChange}
+                    lang={lang}
+                  />
+                ),
+                magic: (
+                  <MagicEditPanel
+                    lang={lang}
+                    isAuthenticated={isAuthenticated}
+                    canUseService={canUseService}
+                    hasCustomKey={hasCustomKey}
+                    remainingCalls={remainingCalls}
+                    isProcessing={isProcessing}
+                    onEdit={handleAIEdit}
+                  />
+                ),
+              }}
+            </EditorTabs>
           </div>
 
           {/* Bottom Actions */}
-          <div className="p-6 border-t border-gray-100 bg-gray-50/50 space-y-3">
+          <div className="p-5 border-t border-gray-100 bg-gray-50/50 space-y-2.5">
             {/* Download & Save Row */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2.5">
               <button
                 onClick={handleDownloadCard}
                 disabled={isDownloading}
-                className="flex items-center justify-center gap-2 py-3 bg-white border-2 border-gray-200 rounded-xl hover:border-[#E76F51] hover:text-[#E76F51] transition-all font-medium text-gray-700 text-sm disabled:opacity-50"
+                className="flex items-center justify-center gap-2 py-2.5 bg-white border-2 border-gray-200 rounded-xl hover:border-[#E76F51] hover:text-[#E76F51] transition-all font-medium text-gray-700 text-sm disabled:opacity-50"
               >
                 {isDownloading ? (
                   <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
@@ -515,7 +398,7 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
               <button
                 onClick={handleSaveChanges}
                 disabled={!hasChanges || isSaving}
-                className={`flex items-center justify-center gap-2 py-3 rounded-xl font-medium text-sm transition-all ${hasChanges
+                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium text-sm transition-all ${hasChanges
                     ? 'bg-gradient-to-r from-[#E76F51] to-[#F4A261] text-white hover:shadow-lg'
                     : 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
@@ -531,7 +414,7 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
             <button
               onClick={handleShareClick}
               disabled={isSharing}
-              className={`w-full flex items-center justify-center gap-2 py-3 border-2 rounded-xl transition-all font-medium text-sm disabled:opacity-50 ${photo.is_public
+              className={`w-full flex items-center justify-center gap-2 py-2.5 border-2 rounded-xl transition-all font-medium text-sm disabled:opacity-50 ${photo.is_public
                   ? 'bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100'
                   : 'bg-white border-gray-200 text-gray-700 hover:border-blue-400 hover:text-blue-500'
                 }`}
@@ -600,7 +483,7 @@ export const GalleryPhotoModal: React.FC<GalleryPhotoModalProps> = ({
               ) : (
                 <button
                   onClick={handleDelete}
-                  className="w-full flex items-center justify-center gap-2 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors font-medium text-sm"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors font-medium text-sm"
                 >
                   <Trash2 className="w-4 h-4" />
                   {t.delete}

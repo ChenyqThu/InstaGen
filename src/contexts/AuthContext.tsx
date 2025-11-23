@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
-import { User, AuthState, OAuthProvider, ProfileUpdate } from '../types/auth';
+import { User, AuthState, ProfileUpdate } from '../types/auth';
 import { authService } from '../services/authService';
 
 interface AuthContextType extends AuthState {
     isAuthenticated: boolean;
-    signInWithOAuth: (provider: OAuthProvider) => Promise<void>;
-    signInWithEmail: (email: string, password: string) => Promise<void>;
-    signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
+    signIn: (email: string, password: string) => Promise<void>;
+    signUp: (email: string, password: string, displayName: string) => Promise<void>;
+    signInWithGoogle: () => Promise<void>;
+    signInWithGithub: () => Promise<void>;
     signOut: () => Promise<void>;
     updateProfile: (updates: ProfileUpdate) => Promise<void>;
 }
@@ -51,17 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
     }, []);
 
-    const signInWithOAuth = async (provider: OAuthProvider) => {
-        try {
-            dispatch({ type: 'SET_LOADING', payload: true });
-            await authService.signInWithOAuth(provider);
-        } catch (error) {
-            dispatch({ type: 'SET_ERROR', payload: error as Error });
-            throw error;
-        }
-    };
-
-    const signInWithEmail = async (email: string, password: string) => {
+    const signIn = async (email: string, password: string) => {
         try {
             dispatch({ type: 'SET_LOADING', payload: true });
             await authService.signInWithEmail(email, password);
@@ -71,10 +62,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const signUpWithEmail = async (email: string, password: string, displayName: string) => {
+    const signUp = async (email: string, password: string, displayName: string) => {
         try {
             dispatch({ type: 'SET_LOADING', payload: true });
             await authService.signUpWithEmail(email, password, displayName);
+        } catch (error) {
+            dispatch({ type: 'SET_ERROR', payload: error as Error });
+            throw error;
+        }
+    };
+
+    const signInWithGoogle = async () => {
+        try {
+            dispatch({ type: 'SET_LOADING', payload: true });
+            await authService.signInWithOAuth('google');
+        } catch (error) {
+            dispatch({ type: 'SET_ERROR', payload: error as Error });
+            throw error;
+        }
+    };
+
+    const signInWithGithub = async () => {
+        try {
+            dispatch({ type: 'SET_LOADING', payload: true });
+            await authService.signInWithOAuth('github');
         } catch (error) {
             dispatch({ type: 'SET_ERROR', payload: error as Error });
             throw error;
@@ -108,9 +119,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const value = {
         ...state,
         isAuthenticated: !!state.user,
-        signInWithOAuth,
-        signInWithEmail,
-        signUpWithEmail,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signInWithGithub,
         signOut,
         updateProfile,
     };

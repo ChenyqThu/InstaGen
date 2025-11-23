@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 InstaGen Polaroid is an interactive Polaroid-style camera web application that uses Google Gemini 2.5 Flash Image API for AI-powered photo editing. Users can take photos through their webcam, drag them onto a virtual board, and apply various AI transformations.
 
-**Current Version**: v1.5.1 (UX & Performance Improvements)
+**Current Version**: v2.0.0 (UI/UX Complete Overhaul)
 
 ## Development Commands
 
@@ -55,15 +55,43 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # For server-side operations
 3. **Account Management** (Phase 3): Profile settings, custom API key
 4. **Usage Limits** (Phase 4): Daily quota (3/day), usage tracking
 5. **Gallery Enhancement** (Phase 5): High-quality download, UX improvements
+6. **Gallery UI/UX Optimization** (Phase 6): Responsive grids, visual polish
+7. **Visual/Interaction Polish** (Phase 7): Animations, hover effects, transitions
+8. **UI/UX Complete Overhaul** (Phase 8): Unified design system, drawer pattern, modular architecture
 
-### Recent Improvements (v1.5.1)
+### Recent Improvements (v2.0.0)
 
-**UX Enhancements**:
-- Save button remains enabled when not logged in - clicking opens login modal
-- Photo state persists through OAuth login flow via localStorage (max 10 photos)
-- Seamless login experience - users can continue editing after authentication
+**Unified Design System** (Phase 8):
+- All controls converted to pill buttons (rounded-full)
+- Glassmorphism throughout (bg-white/80 backdrop-blur-md)
+- Standardized icon containers and hover effects
+- Brand gradient on app name with selection prevention
 
-**Download Quality**:
+**OAuth-First Authentication**:
+- Three-mode system: OAuth → Email Login → Register
+- Floating label inputs reduce modal height by ~30%
+- Smooth mode transitions with directional animations
+- Confirm password field for registration
+
+**Drawer Pattern**:
+- My Photos, Public Gallery, Settings converted to right-side drawers
+- Apple-style slide animations (cubic-bezier(0.32,0.72,0,1))
+- Backdrop blur with click-outside-to-close
+- ESC key support, close buttons in top-right
+
+**Modular Architecture**:
+- Extracted editor components into separate modules
+- EditorTabs, FrameStylePicker, CardEffectPicker, MagicEditPanel
+- Better code organization (<170 lines per component)
+- Improved maintainability and testability
+
+**Layout & Animation**:
+- Camera position moved down 100px with dynamic photo spawn
+- Enhanced modal entrance with spring effect
+- Staggered entry animations for settings sections
+- Consistent hover effects across all controls
+
+**Download Quality** (v1.5.1):
 - High-resolution export: 4x scaling (1360x1960 pixels)
 - Correct aspect ratio cropping (300:340 = 15:17 for Polaroid frame)
 - Native `<img>` rendering for better quality (vs CSS background-image)
@@ -104,10 +132,20 @@ Camera Capture → Photo State (DEVELOPING → DONE → EDITING) → AI Edit / S
 │   │   │   ├── LoginModal.tsx    # OAuth + Email login modal
 │   │   │   ├── UserMenu.tsx      # User dropdown menu
 │   │   │   └── AccountSettings.tsx # Profile + API key settings
-│   │   └── gallery/
-│   │       ├── MyGallery.tsx     # Personal photo library
-│   │       ├── GalleryPhotoModal.tsx # Gallery photo editor with download
-│   │       └── PhotoActions.tsx  # Photo action menu
+│   │   ├── gallery/
+│   │   │   ├── MyGallery.tsx     # Personal photo library
+│   │   │   ├── GalleryPhotoModal.tsx # Gallery photo editor with download
+│   │   │   └── PhotoActions.tsx  # Photo action menu
+│   │   ├── editor/               # Modular editor components (Phase 8)
+│   │   │   ├── EditorTabs.tsx    # Tab navigation (Frames/Effects/Magic)
+│   │   │   ├── FrameStylePicker.tsx # Polaroid frame style selector
+│   │   │   ├── CardEffectPicker.tsx # Pokemon card effect picker
+│   │   │   ├── MagicEditPanel.tsx   # AI magic edit panel
+│   │   │   └── index.ts          # Module exports
+│   │   └── ui/
+│   │       ├── Modal.tsx         # Modal component with animations
+│   │       ├── Input.tsx         # Floating label input (Phase 8)
+│   │       └── Button.tsx        # Button component
 │   ├── services/
 │   │   ├── supabaseClient.ts     # Supabase client (auth)
 │   │   ├── authService.ts        # Auth operations

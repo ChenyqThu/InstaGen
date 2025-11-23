@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Key, AlertTriangle, Check, Loader2, Save, Trash2, Eye, EyeOff } from 'lucide-react';
+import { X, User, Key, AlertTriangle, Check, Loader2, Save, Trash2, Eye, EyeOff, Globe } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { authService } from '../../services/authService';
 import { TRANSLATIONS } from '@/constants';
@@ -18,6 +18,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
     // Profile State
     const [displayName, setDisplayName] = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
+    const [selectedLang, setSelectedLang] = useState<Language>(lang);
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -37,6 +38,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
         if (isOpen && user) {
             setDisplayName(user.displayName || '');
             setAvatarUrl(user.avatarUrl || '');
+            setSelectedLang(user.language || lang);
             setApiKey(user.customGeminiKey || '');
             setKeyValidationStatus(user.customGeminiKey ? 'valid' : null);
             // Reset states
@@ -55,7 +57,8 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
         try {
             await updateProfile({
                 displayName,
-                avatarUrl
+                avatarUrl,
+                language: selectedLang
             });
             setProfileMessage({ type: 'success', text: t.saved });
             setTimeout(() => setProfileMessage(null), 3000);
@@ -211,6 +214,26 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
                                 </div>
                             </div>
 
+                            {/* Language */}
+                            <div>
+                                <label className="block text-sm font-medium text-[#374151] mb-1">{t.language}</label>
+                                <div className="relative">
+                                    <select
+                                        value={selectedLang}
+                                        onChange={(e) => setSelectedLang(e.target.value as Language)}
+                                        className="w-full px-4 py-2 bg-[#F5F5F4] border border-[#E5E5E5] rounded-xl focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/20 outline-none transition-all appearance-none cursor-pointer"
+                                    >
+                                        <option value="en">🇺🇸 English</option>
+                                        <option value="zh">🇨🇳 中文</option>
+                                    </select>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#9CA3AF]">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="m6 9 6 6 6-6" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Save Button */}
                             <div className="flex items-center justify-between">
                                 <div className={`text-sm ${profileMessage?.type === 'success' ? 'text-[#95D5B2]' : 'text-[#E63946]'}`}>
@@ -227,6 +250,8 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
                             </div>
                         </div>
                     </section>
+
+
 
                     {/* API Settings Section */}
                     <section>
@@ -378,8 +403,8 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ isOpen, onClos
                         </div>
                     </section>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 

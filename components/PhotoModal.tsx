@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Button } from '../src/components/ui/Button';
+import { Input } from '../src/components/ui/Input';
 import { EditOption, Language, PhotoData, PhotoFrameStyle, PhotoStatus } from '../types';
 import { EDIT_OPTIONS, FRAME_STYLES, TRANSLATIONS } from '../constants';
 import { editImageWithGemini } from '../services/geminiService';
@@ -8,6 +10,7 @@ import pokemonData from './pokemon-css/data.json';
 import { useUsageLimit } from '../src/hooks/useUsageLimit';
 import { useAuth } from '../src/contexts/AuthContext';
 import { useMyPhotos } from '../src/hooks/useMyPhotos';
+import { useToast } from '../src/contexts/ToastContext';
 
 interface PhotoModalProps {
   photo: PhotoData;
@@ -38,6 +41,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
   const { isAuthenticated } = useAuth();
   const { canUseService, remainingCalls, hasCustomKey, refresh } = useUsageLimit();
   const { savePhoto } = useMyPhotos();
+  const { success, error: toastError, warning } = useToast();
 
   // Sync tempCaption when photo changes or modal opens
   useEffect(() => {
@@ -69,11 +73,11 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 
       // Handle specific error types
       if (error.message === 'auth_required') {
-        alert(t.loginToUse);
+        warning(t.loginToUse);
       } else if (error.message === 'quota_exceeded') {
-        alert(t.quotaExceeded);
+        warning(t.quotaExceeded);
       } else {
-        alert(t.error);
+        toastError(t.error);
       }
     } finally {
       setIsProcessing(false);
@@ -99,9 +103,10 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
       setIsSaving(true);
       await savePhoto(photo);
       setIsSaved(true);
+      success(t.alreadySaved);
     } catch (error) {
       console.error('Failed to save photo:', error);
-      alert(t.error);
+      toastError(t.error);
     } finally {
       setIsSaving(false);
     }
@@ -133,14 +138,19 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
       <div className="relative w-full max-w-5xl h-[85vh] bg-[#FAFAFA] rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
 
         {/* Close Button */}
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 z-50 w-10 h-10 bg-white/80 hover:bg-white rounded-full shadow-md flex items-center justify-center transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-gray-600">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        {/* Close Button */}
+        <div className="absolute top-4 right-4 z-50">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleClose}
+            className="w-10 h-10 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-gray-600">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </Button>
+        </div>
 
         {/* LEFT: Image Preview Area */}
         <div className="flex-1 bg-gray-200/50 flex items-center justify-center p-6 relative overflow-hidden bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]">
@@ -197,7 +207,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
                   <button
                     key={style}
                     onClick={() => onUpdate(photo.id, { frameStyle: style })}
-                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-transform hover:scale-110 ${photo.frameStyle === style ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'} ${FRAME_STYLES[style]}`}
+                    className={`w-10 h-10 rounded-full border-2 shadow-sm transition-transform hover:scale-110 ${photo.frameStyle === style ? 'border-brand-primary ring-2 ring-brand-primary/20' : 'border-gray-300'} ${FRAME_STYLES[style]}`}
                     title={style}
                   />
                 ))}
@@ -214,7 +224,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
                     setSelectedPokemonId('');
                     onUpdate(photo.id, { pokemonId: undefined });
                   }}
-                  className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${!photo.pokemonId ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                  className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${!photo.pokemonId ? 'border-brand-primary ring-2 ring-brand-primary/20' : 'border-gray-300'
                     }`}
                   title={t.cardEffectNone}
                 >
@@ -238,7 +248,7 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
                       setSelectedPokemonId(card.id);
                       onUpdate(photo.id, { pokemonId: card.id });
                     }}
-                    className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${selectedPokemonId === card.id ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300'
+                    className={`relative w-full aspect-square rounded-lg border-2 shadow-sm transition-all hover:scale-105 overflow-hidden ${photo.pokemonId === card.id ? 'border-brand-primary ring-2 ring-brand-primary/20' : 'border-gray-300'
                       }`}
                     title={card.name}
                   >
@@ -336,39 +346,41 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
 
               {/* Custom Input */}
               <div className="relative">
-                <input
-                  type="text"
+                <Input
                   value={customPrompt}
                   disabled={!canUseService || isProcessing}
                   onChange={(e) => setCustomPrompt(e.target.value)}
                   placeholder={t.customPromptPlaceholder}
                   onKeyDown={(e) => e.key === 'Enter' && handleAIEdit()}
-                  className="w-full pl-4 pr-12 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="pr-12"
                 />
-                <button
-                  onClick={() => handleAIEdit()}
-                  disabled={!canUseService || !customPrompt || isProcessing}
-                  className="absolute right-2 top-2 p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                  </svg>
-                </button>
+                <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                  <Button
+                    size="icon"
+                    onClick={() => handleAIEdit()}
+                    disabled={!canUseService || !customPrompt || isProcessing}
+                    className="w-8 h-8 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors p-0"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Bottom Actions */}
           <div className="p-6 border-t border-gray-100 bg-gray-50/50 space-y-3">
-            <button
+            <Button
               onClick={handleSave}
               disabled={isSaved || isSaving}
               title={!isAuthenticated ? (lang === 'zh' ? '点击登录以保存' : 'Click to login and save') : ''}
-              className={`flex items-center justify-center w-full py-3 rounded-xl font-medium text-sm shadow-sm transition-colors ${isSaved
-                  ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-                  : !isAuthenticated
-                    ? 'bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:shadow-md'
-                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
+              className={`w-full py-3 rounded-xl font-medium text-sm shadow-sm transition-colors ${isSaved
+                ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+                : !isAuthenticated
+                  ? 'bg-white border-2 border-blue-500 text-blue-600 hover:bg-blue-50 hover:shadow-md'
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'
                 }`}
             >
               {isSaving ? (
@@ -379,34 +391,35 @@ export const PhotoModal: React.FC<PhotoModalProps> = ({
                 </svg>
               ) : null}
               {isSaved ? t.alreadySaved : t.savePhoto}
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={async () => {
                 try {
                   setIsProcessing(true);
                   const { photoService } = await import('../src/services/photoService');
                   await photoService.pinPhotoToPublic(photo);
-                  alert(t.pinSuccess);
+                  success(t.pinSuccess);
                 } catch (error) {
                   console.error(error);
-                  alert(t.pinError);
+                  toastError(t.pinError);
                 } finally {
                   setIsProcessing(false);
                 }
               }}
-              className="flex items-center justify-center w-full py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium text-sm hover:from-pink-600 hover:to-rose-600 transition-colors shadow-sm"
+              className="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl font-medium text-sm hover:from-pink-600 hover:to-rose-600 transition-colors shadow-sm"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
               </svg>
               {t.pinToGallery}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="danger"
               onClick={handleDelete}
-              className="w-full py-3 text-red-500 hover:bg-red-50 rounded-xl text-sm font-medium transition-colors"
+              className="w-full py-3 rounded-xl text-sm font-medium transition-colors"
             >
               {t.delete}
-            </button>
+            </Button>
           </div>
         </div>
 

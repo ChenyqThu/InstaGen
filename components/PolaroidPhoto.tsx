@@ -24,6 +24,7 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [dragTilt, setDragTilt] = useState(0);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   const dragStart = useRef({ x: 0, y: 0 });
   const dragStartMouse = useRef({ x: 0, y: 0 });
@@ -130,11 +131,29 @@ export const PolaroidPhoto: React.FC<PolaroidPhotoProps> = ({
           : '0 4px 10px rgba(0, 0, 0, 0.2)',
       }}
       onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
+      onPointerMove={(e) => {
+        handlePointerMove(e);
+        if (!isDragging) {
+          const rect = e.currentTarget.getBoundingClientRect();
+          setMousePosition({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+          });
+        }
+      }}
       onPointerUp={handlePointerUp}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Flashlight Effect Overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none z-20 transition-opacity duration-300 rounded-sm"
+        style={{
+          opacity: isHovered && !isDragging ? 1 : 0,
+          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.4), transparent 40%)`,
+          mixBlendMode: 'overlay',
+        }}
+      />
       {photo.pokemonId ? (
         <div className="w-full h-[210px]">
           <PokemonCard

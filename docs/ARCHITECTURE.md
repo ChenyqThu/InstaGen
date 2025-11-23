@@ -79,6 +79,14 @@
 │   │       ├── MyGallery.tsx     # 个人照片库
 │   │       ├── GalleryPhotoModal.tsx # 画廊照片编辑器（高质量下载）
 │   │       └── PhotoActions.tsx  # 照片操作菜单
+│   │   ├── ui/                   # 基础 UI 组件 (Phase 7)
+│   │   │   ├── Button.tsx
+│   │   │   ├── Input.tsx
+│   │   │   ├── Modal.tsx
+│   │   │   ├── Card.tsx
+│   │   │   ├── Toast.tsx
+│   │   │   ├── Skeleton.tsx
+│   │   │   └── AnimateInView.tsx
 │   ├── services/
 │   │   ├── supabaseClient.ts     # Supabase 客户端 (认证)
 │   │   ├── authService.ts        # 认证服务

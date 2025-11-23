@@ -15,6 +15,39 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
   const [imageError, setImageError] = useState(false);
   const [currentFilter, setCurrentFilter] = useState<FilterConfig>(INSTAGRAM_FILTERS[0]);
 
+  // Intro animation: Spin the filter wheel
+  useEffect(() => {
+    let spinCount = 0;
+    const maxSpins = 6; // Start from 6 filters away
+    const startDelay = 500; // Wait a bit before spinning
+
+    const spin = (count: number) => {
+      if (count >= maxSpins) return;
+
+      // Calculate delay for next step (ease-out effect)
+      // As count increases, delay increases
+      const delay = 100 + (count * 50);
+
+      setTimeout(() => {
+        // Calculate index: start from maxSpins and go down to 0
+        // We use modulo to wrap around if needed, but here we just want to land on 0
+        const nextIndex = maxSpins - 1 - count;
+        if (nextIndex >= 0 && nextIndex < INSTAGRAM_FILTERS.length) {
+          setCurrentFilter(INSTAGRAM_FILTERS[nextIndex]);
+        }
+        spin(count + 1);
+      }, delay);
+    };
+
+    const timer = setTimeout(() => {
+      // Set initial position
+      setCurrentFilter(INSTAGRAM_FILTERS[maxSpins]);
+      spin(0);
+    }, startDelay);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     const startCamera = async () => {
       try {
@@ -81,25 +114,25 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
 
   return (
     <div className="relative w-[380px] h-[380px] md:w-[420px] md:h-[420px] select-none z-20 group">
-      
+
       {/* Main Camera Image */}
       {/* IMPORTANT: Move your 'Retro Camera 1024.webp' to 'assets/camera.webp' */}
-      <img 
-        src="/assets/camera.webp" 
-        alt="InstaGen Camera" 
+      <img
+        src="/assets/camera.webp"
+        alt="InstaGen Camera"
         className="w-full h-full object-contain drop-shadow-2xl pointer-events-none relative z-20"
         onError={(e) => {
-            setImageError(true);
-            (e.target as HTMLImageElement).style.display = 'none';
+          setImageError(true);
+          (e.target as HTMLImageElement).style.display = 'none';
         }}
       />
 
       {/* Fallback if image missing */}
       {imageError && (
         <div className="absolute inset-0 bg-[#FDF6E3] border-4 border-dashed border-gray-400 rounded-3xl flex flex-col items-center justify-center p-4 text-center z-10">
-            <span className="text-2xl mb-2">📸</span>
-            <p className="text-gray-500 font-bold text-sm">Image Missing</p>
-            <p className="text-xs text-gray-400 mt-1">Move file to:<br/><code>/assets/camera.webp</code></p>
+          <span className="text-2xl mb-2">📸</span>
+          <p className="text-gray-500 font-bold text-sm">Image Missing</p>
+          <p className="text-xs text-gray-400 mt-1">Move file to:<br /><code>/assets/camera.webp</code></p>
         </div>
       )}
 
@@ -108,34 +141,34 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
           Adjusted based on actual camera image layout.
       */}
       <div className="absolute top-[54.5%] left-[62.2%] transform -translate-x-1/2 -translate-y-1/2 w-[43%] h-[43%] z-30">
-          {/* Filter Wheel around the lens */}
-          <FilterWheel
-            currentFilter={currentFilter}
-            onFilterChange={setCurrentFilter}
-            size={180}
-            lang={lang}
-          />
+        {/* Filter Wheel around the lens */}
+        <FilterWheel
+          currentFilter={currentFilter}
+          onFilterChange={setCurrentFilter}
+          size={180}
+          lang={lang}
+        />
 
-          {/* Video feed with filter applied */}
-          <div className={`absolute inset-0 rounded-full overflow-hidden bg-[#1a1a1a] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] ring-4 ring-black/80 ${currentFilter.className}`}>
-              {!streamError ? (
-                <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    muted
-                    className="w-full h-full object-cover transform -scale-x-100 opacity-90 hover:opacity-100 transition-opacity"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                    <span className="text-xs text-gray-500">No Signal</span>
-                </div>
-              )}
+        {/* Video feed with filter applied */}
+        <div className={`absolute inset-0 rounded-full overflow-hidden bg-[#1a1a1a] shadow-[inset_0_0_20px_rgba(0,0,0,0.8)] ring-4 ring-black/80 ${currentFilter.className}`}>
+          {!streamError ? (
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-full h-full object-cover transform -scale-x-100 opacity-90 hover:opacity-100 transition-opacity"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-800">
+              <span className="text-xs text-gray-500">No Signal</span>
+            </div>
+          )}
 
-              {/* Lens Reflection / Gloss */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
-              <div className="absolute top-[15%] right-[15%] w-[10%] h-[5%] bg-white/20 rounded-full rotate-45 blur-[2px] pointer-events-none"></div>
-          </div>
+          {/* Lens Reflection / Gloss */}
+          <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
+          <div className="absolute top-[15%] right-[15%] w-[10%] h-[5%] bg-white/20 rounded-full rotate-45 blur-[2px] pointer-events-none"></div>
+        </div>
       </div>
 
       {/* Shutter Button Hotspot
@@ -149,6 +182,17 @@ export const Camera: React.FC<CameraProps> = ({ onTakePhoto, lang }) => {
       >
         {/* Visual ripple hint on hover */}
         <span className="absolute inset-0 rounded-full bg-white opacity-0 group-hover:opacity-20 animate-ping-slow"></span>
+
+        {/* Gravity-influenced light beam border */}
+        <span className="absolute -inset-[3px] rounded-full animate-gravity-spin pointer-events-none">
+          <span className="absolute inset-0 rounded-full"
+            style={{
+              background: `conic-gradient(from 0deg, transparent 0deg, transparent 300deg, #E76F51 360deg)`,
+              maskImage: 'radial-gradient(transparent 63%, black 65%)',
+              WebkitMaskImage: 'radial-gradient(transparent 63%, black 65%)'
+            }}
+          ></span>
+        </span>
       </button>
 
       {/* Hidden Canvas for processing */}

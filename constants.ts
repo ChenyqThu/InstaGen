@@ -73,6 +73,7 @@ export const TRANSLATIONS = {
     profile: 'Profile',
     displayName: 'Display Name',
     saveChanges: 'Save Changes',
+    language: 'Language',
 
     // API Settings
     apiSettings: 'API Settings',
@@ -167,6 +168,7 @@ export const TRANSLATIONS = {
     displayName: '显示名称',
     email: '邮箱',
     saveChanges: '保存修改',
+    language: '语言',
 
     // API Settings
     apiSettings: 'API 设置',

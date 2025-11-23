@@ -4,8 +4,12 @@ import { photoService } from '../src/services/photoService';
 import { PolaroidFrame } from './PolaroidFrame';
 import { PokemonCard } from './pokemon-css/PokemonCard';
 import pokemonData from './pokemon-css/data.json';
+import { supabase } from '../src/services/supabaseClient';
 import { TRANSLATIONS } from '../constants';
+import { Language } from '../types';
+import { AnimateInView } from '../src/components/ui/AnimateInView';
 import { INSTAGRAM_FILTERS } from '../config/filterConfig';
+import { Skeleton } from '../src/components/ui/Skeleton';
 
 interface PublicGalleryProps {
     isOpen: boolean;
@@ -60,10 +64,10 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
                 className="absolute inset-0 opacity-30 pointer-events-none"
                 style={{
                     backgroundImage: `
-            radial-gradient(circle, #F4A261 1.5px, transparent 1.5px),
-            radial-gradient(circle, #E76F51 1.5px, transparent 1.5px),
-            radial-gradient(circle, #F4A261 1px, transparent 1px)
-          `,
+                        radial-gradient(circle, #F4A261 1.5px, transparent 1.5px),
+                        radial-gradient(circle, #E76F51 1.5px, transparent 1.5px),
+                        radial-gradient(circle, #F4A261 1px, transparent 1px)
+                    `,
                     backgroundSize: '60px 60px, 80px 80px, 40px 40px',
                     backgroundPosition: '0 0, 37px 23px, 19px 51px'
                 }}
@@ -89,12 +93,20 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
             {/* Gallery Grid */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-8 z-0">
                 {loading ? (
-                    <div className="flex items-center justify-center h-full">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-stone-400"></div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 pb-20 pt-8">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="flex justify-center">
+                                <div className="w-[220px] h-[260px] p-4 bg-white shadow-lg transform rotate-1">
+                                    <Skeleton className="w-full h-[180px] mb-4 rounded-sm" />
+                                    <Skeleton className="w-3/4 h-4 mb-2 rounded-sm" />
+                                    <Skeleton className="w-1/2 h-3 rounded-sm" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-12 pb-20 pt-8">
-                        {photos.map((photo) => {
+                        {photos.map((photo, index) => {
                             // Get filter class if filterId exists
                             const filterClass = photo.filterId
                                 ? INSTAGRAM_FILTERS.find(f => f.id === photo.filterId)?.className || ''
@@ -105,42 +117,44 @@ export const PublicGallery: React.FC<PublicGalleryProps> = ({ isOpen, onClose, l
                                 : null;
 
                             return (
-                                <div key={photo.id} className="relative flex justify-center transform hover:scale-105 transition-transform duration-300 group" style={{ transform: `rotate(${photo.rotation}deg)` }}>
-                                    {pokemonCard ? (
-                                        <div className={`w-[200px] h-[280px] ${filterClass}`}>
-                                            <PokemonCard
-                                                {...pokemonCard}
-                                                img={photo.dataUrl}
-                                                name={photo.caption || ''}
-                                                className="w-full h-full"
-                                            >
+                                <AnimateInView key={photo.id} animation="fade-up" delay={index * 50}>
+                                    <div className="relative flex justify-center transform hover:scale-105 transition-transform duration-300 group" style={{ transform: `rotate(${photo.rotation}deg)` }}>
+                                        {pokemonCard ? (
+                                            <div className={`w-[200px] h-[280px] ${filterClass}`}>
+                                                <PokemonCard
+                                                    {...pokemonCard}
+                                                    img={photo.dataUrl}
+                                                    name={photo.caption || ''}
+                                                    className="w-full h-full"
+                                                >
+                                                    <PolaroidFrame
+                                                        dataUrl={photo.dataUrl}
+                                                        caption={photo.caption}
+                                                        timestamp={photo.timestamp}
+                                                        frameStyle={photo.frameStyle}
+                                                        scale={0.6}
+                                                        editable={false}
+                                                        promptUsed={photo.promptUsed}
+                                                        lang={lang}
+                                                    />
+                                                </PokemonCard>
+                                            </div>
+                                        ) : (
+                                            <div className={filterClass}>
                                                 <PolaroidFrame
                                                     dataUrl={photo.dataUrl}
                                                     caption={photo.caption}
                                                     timestamp={photo.timestamp}
                                                     frameStyle={photo.frameStyle}
-                                                    scale={0.6}
+                                                    scale={0.8}
                                                     editable={false}
                                                     promptUsed={photo.promptUsed}
                                                     lang={lang}
                                                 />
-                                            </PokemonCard>
-                                        </div>
-                                    ) : (
-                                        <div className={filterClass}>
-                                            <PolaroidFrame
-                                                dataUrl={photo.dataUrl}
-                                                caption={photo.caption}
-                                                timestamp={photo.timestamp}
-                                                frameStyle={photo.frameStyle}
-                                                scale={0.8}
-                                                editable={false}
-                                                promptUsed={photo.promptUsed}
-                                                lang={lang}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </AnimateInView>
                             );
                         })}
                         {photos.length === 0 && (

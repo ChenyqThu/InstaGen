@@ -87,7 +87,7 @@ export const MyGallery: React.FC<MyGalleryProps> = ({ isOpen, onClose, lang }) =
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-40 bg-[#FDF8F5] animate-in slide-in-from-bottom-10 duration-300 flex flex-col">
+        <div className="fixed inset-0 z-40 bg-stone-100 animate-in slide-in-from-bottom-10 duration-300 flex flex-col">
             {/* Header */}
             <div className="flex-none px-4 md:px-6 py-4 border-b border-gray-200 bg-white/50 backdrop-blur-sm relative">
                 {/* Mobile Search Overlay */}
@@ -168,11 +168,10 @@ export const MyGallery: React.FC<MyGalleryProps> = ({ isOpen, onClose, lang }) =
                                 <button
                                     key={f}
                                     onClick={() => setFilter(f)}
-                                    className={`px-2 md:px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                        filter === f
-                                            ? 'bg-orange-50 text-orange-600 shadow-sm'
-                                            : 'text-gray-500 hover:bg-gray-50'
-                                    }`}
+                                    className={`px-2 md:px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === f
+                                        ? 'bg-orange-50 text-orange-600 shadow-sm'
+                                        : 'text-gray-500 hover:bg-gray-50'
+                                        }`}
                                 >
                                     {t[f]}
                                 </button>
@@ -199,16 +198,17 @@ export const MyGallery: React.FC<MyGalleryProps> = ({ isOpen, onClose, lang }) =
                         </button>
                     </div>
                 ) : (
-                    <div className="flex flex-wrap gap-6 justify-center md:justify-start">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10">
                         {filteredAndSortedPhotos.map((photo) => (
-                            <PhotoCard
-                                key={photo.id}
-                                photo={photo}
-                                size="md"
-                                onClick={() => setSelectedPhoto(photo)}
-                                showStatus={true}
-                                lang={lang}
-                            />
+                            <div key={photo.id} className="flex justify-center">
+                                <PhotoCard
+                                    photo={photo}
+                                    size="lg"
+                                    onClick={() => setSelectedPhoto(photo)}
+                                    showStatus={true}
+                                    lang={lang}
+                                />
+                            </div>
                         ))}
                     </div>
                 )}

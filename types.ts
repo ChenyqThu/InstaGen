@@ -22,6 +22,8 @@ export interface PhotoData {
   frameStyle: PhotoFrameStyle;
   promptUsed?: string;
   caption?: string;
+  customGeminiKey?: string | null;
+  language?: Language;
   pokemonId?: string;
   filterId?: string; // Instagram filter ID
 }

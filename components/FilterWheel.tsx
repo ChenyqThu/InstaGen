@@ -10,7 +10,7 @@ interface FilterWheelProps {
 }
 
 const TOOTH_HEIGHT = 1; // Shallow teeth for grip texture
-const KNURL_TEETH =180; // Dense teeth for friction knurl effect
+const KNURL_TEETH = 180; // Dense teeth for friction knurl effect
 
 export const FilterWheel: React.FC<FilterWheelProps> = ({
   currentFilter,
@@ -91,6 +91,26 @@ export const FilterWheel: React.FC<FilterWheelProps> = ({
       }
     }
   }, [rotation, isDragging, getCurrentFilterIndex, filters, currentFilter, onFilterChange]);
+
+  // Sync rotation with currentFilter prop (for external changes like intro animation)
+  useEffect(() => {
+    if (!isDragging) {
+      const index = filters.findIndex(f => f.id === currentFilter.id);
+      if (index !== -1) {
+        // Calculate target rotation: (index * anglePerFilter) - 90
+        // We need to find the closest rotation to the current one to avoid spinning wildly
+        const targetRotation = (index * anglePerFilter) - 90;
+
+        // Normalize current rotation to match target's phase
+        const currentNormalized = rotation % 360;
+        const diff = targetRotation - currentNormalized;
+
+        // Adjust for shortest path if needed (optional, but good for continuous rotation)
+        // For now, direct mapping is fine as the intro animation is linear
+        setRotation(targetRotation);
+      }
+    }
+  }, [currentFilter, isDragging, filters, anglePerFilter]);
 
   // Generate knurl texture SVG path - dense shallow teeth for grip
   const generateGearPath = () => {
@@ -193,17 +213,17 @@ export const FilterWheel: React.FC<FilterWheelProps> = ({
 
       {/* Fixed indicator line at bottom */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 z-20"
+        className="absolute left-1/2 -translate-x-1/2 z-20 flex flex-col items-center"
         style={{
-          bottom: -36,
+          bottom: -45,
         }}
       >
-        {/* Red indicator line */}
-        <div className="w-1.5 h-5 bg-red-500 rounded-full shadow-lg mx-auto" />
+        {/* Indicator Triangle - Larger and more obvious */}
+        <div className="w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[10px] border-b-[#E76F51] mb-1 drop-shadow-md" />
 
-        {/* Filter name display */}
-        <div className="mt-0.5 px-3 py-1 bg-black/70 rounded-full backdrop-blur-sm">
-          <span className="text-white text-xs font-bold tracking-wider whitespace-nowrap">
+        {/* Filter name display - Colored pill with high contrast */}
+        <div className="px-4 py-1.5 bg-[#E76F51]/90 backdrop-blur-sm border border-white/20 rounded-full shadow-lg transition-all hover:scale-105">
+          <span className="text-white text-xs font-bold tracking-widest whitespace-nowrap drop-shadow-sm">
             {currentFilter.name[lang].toUpperCase()}
           </span>
         </div>

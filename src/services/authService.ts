@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { User, ProfileUpdate, OAuthProvider, UserProfile } from '../types/auth';
+import { Language } from '../../types';
 
 export const authService = {
     async signInWithOAuth(provider: OAuthProvider) {
@@ -55,6 +56,7 @@ export const authService = {
             displayName: profile?.display_name || user.user_metadata.full_name || user.user_metadata.name || null,
             avatarUrl: profile?.avatar_url || user.user_metadata.avatar_url || null,
             customGeminiKey: profile?.custom_gemini_key || null,
+            language: (profile?.language as Language) || 'en',
             createdAt: user.created_at,
         };
     },
@@ -83,6 +85,7 @@ export const authService = {
                 display_name: updates.displayName,
                 avatar_url: updates.avatarUrl,
                 custom_gemini_key: updates.customGeminiKey,
+                language: updates.language,
                 updated_at: new Date().toISOString(),
             })
             .eq('id', userId);
@@ -110,6 +113,7 @@ export const authService = {
                     displayName: user.user_metadata.full_name || user.user_metadata.name || null,
                     avatarUrl: user.user_metadata.avatar_url || null,
                     customGeminiKey: null as string | null,
+                    language: 'en' as Language,
                     createdAt: user.created_at,
                 };
                 callback(basicUser);
@@ -123,6 +127,7 @@ export const authService = {
                             displayName: profile.display_name || basicUser.displayName,
                             avatarUrl: profile.avatar_url || basicUser.avatarUrl,
                             customGeminiKey: profile.custom_gemini_key || null,
+                            language: (profile.language as Language) || 'en',
                         });
                     }
                 }, 0);

@@ -11,6 +11,7 @@ import { UserMenu } from '@/src/components/auth/UserMenu';
 import { LoginModal } from '@/src/components/auth/LoginModal';
 import { Button } from './src/components/ui/Button';
 import { ToastProvider } from './src/contexts/ToastContext';
+import { GuideModal } from './src/components/ui/GuideModal';
 
 const STORAGE_KEY = 'instagen-photos';
 const MAX_STORED_PHOTOS = 5; // Reduced limit to prevent localStorage overflow (base64 images are large)
@@ -43,7 +44,22 @@ const App: React.FC = () => {
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [flashActive, setFlashActive] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // Check for first-time login guide
+  useEffect(() => {
+    // Show guide if not seen before (check localStorage)
+    const hasSeenGuide = localStorage.getItem('hasSeenGuide');
+    if (!hasSeenGuide) {
+      // Delay slightly to let UI settle
+      const timer = setTimeout(() => {
+        setShowGuide(true);
+        localStorage.setItem('hasSeenGuide', 'true');
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   // Persist photos to localStorage whenever they change
   useEffect(() => {
@@ -164,6 +180,29 @@ const App: React.FC = () => {
 
       {/* Top Right Controls */}
       <div className="absolute top-6 right-8 z-50 flex items-center gap-3">
+        {/* Guide Button */}
+        <button
+          onClick={() => setShowGuide(true)}
+          className="
+            flex items-center gap-2 px-3 py-2
+            bg-white/80 backdrop-blur-md
+            rounded-full
+            border border-white/50
+            shadow-sm hover:shadow-md
+            hover:-translate-y-0.5 active:translate-y-0
+            transition-all duration-200
+            group
+          "
+          title={lang === 'zh' ? '使用指南' : 'Guide'}
+        >
+          <div className="w-7 h-7 rounded-lg bg-brand-primary/10 flex items-center justify-center group-hover:bg-brand-primary/20 transition-colors">
+            <span className="text-brand-primary font-bold text-lg leading-none">?</span>
+          </div>
+          <span className="text-sm font-medium text-text-main group-hover:text-brand-primary hidden sm:block">
+            {lang === 'zh' ? '使用指南' : 'Guide'}
+          </span>
+        </button>
+
         {/* Public Gallery Entry */}
         <button
           onClick={() => setShowGallery(true)}
@@ -274,6 +313,12 @@ const App: React.FC = () => {
       <PublicGallery
         isOpen={showGallery}
         onClose={() => setShowGallery(false)}
+        lang={lang}
+      />
+
+      <GuideModal
+        isOpen={showGuide}
+        onClose={() => setShowGuide(false)}
         lang={lang}
       />
 

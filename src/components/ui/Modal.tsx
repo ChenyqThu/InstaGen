@@ -6,7 +6,8 @@ interface ModalProps {
     onClose: () => void;
     children: React.ReactNode;
     className?: string;
-    size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
+    animationType?: 'default' | 'zoom-out-top-right';
 }
 
 const ModalContext = React.createContext<{ onClose: () => void }>({ onClose: () => { } });
@@ -15,7 +16,7 @@ export const Modal: React.FC<ModalProps> & {
     Header: React.FC<ModalHeaderProps>;
     Body: React.FC<ModalBodyProps>;
     Footer: React.FC<ModalFooterProps>;
-} = ({ isOpen, onClose, children, className = '', size = 'md' }) => {
+} = ({ isOpen, onClose, children, className = '', size = 'md', animationType = 'default' }) => {
     const [isMounted, setIsMounted] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -51,7 +52,23 @@ export const Modal: React.FC<ModalProps> & {
         md: 'max-w-md',
         lg: 'max-w-lg',
         xl: 'max-w-xl',
+        '2xl': 'max-w-4xl',
         full: 'max-w-full m-4',
+    };
+
+    const getAnimationClasses = () => {
+        if (animationType === 'zoom-out-top-right') {
+            // Target position: approximates the top-right button position
+            // Center of screen (50vw, 50vh) to Button (~100vw-60px, ~40px)
+            // Delta X ≈ 45vw, Delta Y ≈ -45vh
+            return isVisible
+                ? 'opacity-100 scale-100 translate-y-0 translate-x-0'
+                : 'opacity-0 scale-0 translate-x-[45vw] -translate-y-[45vh]';
+        }
+        // Default
+        return isVisible
+            ? 'opacity-100 scale-100 translate-y-0'
+            : 'opacity-0 scale-90 translate-y-8';
     };
 
     return createPortal(
@@ -61,25 +78,23 @@ export const Modal: React.FC<ModalProps> & {
                 <div
                     className={`
                         absolute inset-0 bg-black/40 backdrop-blur-md
-                        transition-all duration-350 ease-out
+                        transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)
                         ${isVisible ? 'opacity-100' : 'opacity-0'}
                     `}
                     onClick={onClose}
                 />
 
-                {/* Modal Content with spring-like animation */}
+                {/* Modal Content */}
                 <div
                     className={`
                         relative w-full bg-surface-modal rounded-3xl shadow-2xl overflow-hidden
-                        transform transition-all duration-350 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-                        ${isVisible
-                            ? 'opacity-100 scale-100 translate-y-0'
-                            : 'opacity-0 scale-90 translate-y-8'
-                        }
+                        transform transition-all duration-500 cubic-bezier(0.16, 1, 0.3, 1)
+                        ${getAnimationClasses()}
                         ${sizeClasses[size]}
                         ${className}
                     `}
                     style={{
+                        transformOrigin: 'center center', // Allow translate to do the moving
                         boxShadow: isVisible
                             ? '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)'
                             : 'none'
